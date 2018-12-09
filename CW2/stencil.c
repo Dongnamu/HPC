@@ -12,6 +12,33 @@ void output_image(const char * file_name, const int nx, const int ny, float * re
 double wtime(void);
 
 int main(int argc, char *argv[]) {
+  int rank; // rank of process among it's cohort
+  int size; // size of cohort, i.e. num processess started
+  int flag; // for checking whether MPI_Init() has been called
+  int strlen; // length of a character array
+  enum bool {FALSE, TRUE}; // enumerated type: false = 0, true = 1
+  char hostname[MPI_MAX_PROCESSOR_NAME]; // character array to hold hostname running process
+
+  // initialise our MPI environment
+  MPI_Init( &argc, &argv);
+
+  // check wheter the initialisation was successful
+  MPI_Initialized(&flag);
+
+  if (flag != TRUE) {
+    MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+  }
+
+  //determine the hostname
+  MPI_Get_processor_name(hostname, &strlen);
+
+  // determine the size of the group of processes associated with the 'communicator'.
+  // default communicator is MPI_COMM_WORLD, consisting of all the processes in the launched MPI 'job'
+  MPI_Comm_size( MPI_COMM_WORLD, &size );
+
+  //determine the RANK of the current process [0: size - 1]
+  MPI_Comm_rank( MPI_COMM_WORLD, &rank );
+
 
   // Check usage
   if (argc != 4) {
@@ -33,7 +60,7 @@ int main(int argc, char *argv[]) {
 
   // Call the stencil kernel
   double tic = wtime();
-  
+
   for (int t = 0; t < niters; ++t) {
     stencil(nx, ny, image, tmp_image);
     stencil(nx, ny, tmp_image, image);
@@ -48,6 +75,10 @@ int main(int argc, char *argv[]) {
 
   output_image(OUTPUT_FILE, nx, ny, image);
   free(image);
+
+  MPI_Finalize();
+
+  return EXIT_SUCCESS;
 }
 
 void stencil(const int nx, const int ny, float * restrict image, float * restrict tmp_image) {
@@ -56,7 +87,7 @@ void stencil(const int nx, const int ny, float * restrict image, float * restric
   float  Mul = 0.1f;
 
   float numberToadd = 0.0f;
- 
+
   // when i = 0, j = 0
   numberToadd = image[0] * initialMul;
   numberToadd += image[ny] * Mul;
@@ -95,7 +126,7 @@ void stencil(const int nx, const int ny, float * restrict image, float * restric
 	numberToadd += image[j+1+(nx-1)*ny] * Mul;
 	tmp_image[j+(nx-1)*ny] = numberToadd;
   }
-  // when 0 < i < nx -1, j = 0 and when 0 < i < nx - 1, j = ny - 1 
+  // when 0 < i < nx -1, j = 0 and when 0 < i < nx - 1, j = ny - 1
 
   for (int i = 1; i < nx - 1; i++) {
 	numberToadd = image[i * ny] * initialMul;
