@@ -1,10 +1,22 @@
-Running on host node31-029
-Time is Sun Dec 9 16:02:01 GMT 2018
+Running on host node31-031
+Time is Sun Dec 9 16:10:46 GMT 2018
 Directory is /panfs/panasas01/cosc/js16397/HPC/mpi/examples/example1
-PBS job ID is 7797697.master.cm.cluster
+PBS job ID is 7797732.master.cm.cluster
 This jobs runs on the following machines:
-node31-029
-Hello, world; from host node31-029: process 1 of 4
-Hello, world; from host node31-029: process 2 of 4
-Hello, world; from host node31-029: process 0 of 4
-Hello, world; from host node31-029: process 3 of 4
+node31-031
+Hello, world; from host node31-031: process 6 of 16
+Hello, world; from host node31-031: process 7 of 16
+Hello, world; from host node31-031: process 8 of 16
+Hello, world; from host node31-031: process 9 of 16
+Hello, world; from host node31-031: process 3 of 16
+Hello, world; from host node31-031: process 5 of 16
+Hello, world; from host node31-031: process 0 of 16
+Hello, world; from host node31-031: process 1 of 16
+Hello, world; from host node31-031: process 10 of 16
+Hello, world; from host node31-031: process 11 of 16
+Hello, world; from host node31-031: process 12 of 16
+Hello, world; from host node31-031: process 13 of 16
+Hello, world; from host node31-031: process 14 of 16
+Hello, world; from host node31-031: process 4 of 16
+Hello, world; from host node31-031: process 2 of 16
+Hello, world; from host node31-031: process 15 of 16
