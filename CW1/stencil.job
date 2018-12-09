@@ -3,7 +3,7 @@
 #PBS -o stencil.out
 #PBS -joe
 #PBS -m a
-#PBS -qteaching
+#PBS -q teaching
 #PBS -lnodes=1:ppn=16
 #PBS -lwalltime=00:01:00
 
@@ -15,4 +15,3 @@ echo Directory is `pwd`
 echo PBS job ID is $PBS_JOBID
 
 ./stencil 1024 1024 100
-
