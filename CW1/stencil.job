@@ -1,15 +1,11 @@
 #!/bin/bash
 #PBS -N stencil
-#PBS -o stencil.outsd
+#PBS -o stencil.out
 #PBS -joe
 #PBS -m a
-#PBS -q teaching
+#PBS -qteaching
 #PBS -lnodes=1:ppn=16
 #PBS -lwalltime=00:01:00
-
-application="stencil"
-
-options = ""
 
 cd $PBS_O_WORKDIR
 
@@ -17,11 +13,5 @@ echo Running on host `hostname`
 echo Time is `date`
 echo Directory is `pwd`
 echo PBS job ID is $PBS_JOBID
-echo This jobs runs on the following machines:
-echo `cat $PBS_NODEFILE | uniq`
-
-cat $PBS_NODEFILE > machine.file.$PBS_JOBID
-
-numnodes=`wc PBS_NODEFILE | awk '{print $1}'`
 
 ./stencil 1024 1024 100
