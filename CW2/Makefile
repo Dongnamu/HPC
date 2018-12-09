@@ -1,2 +1,2 @@
 stencil: stencil.c
-mpicc -xHost -Ofast -std=c99 -Wall $^ -o $@
+icc mpicc -xHost -Ofast -std=c99 -Wall $^ -o $@
