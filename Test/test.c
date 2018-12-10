@@ -19,11 +19,15 @@ int main(int argc, char *argv[]) {
   double *sendbuf;       /* buffer to hold values to send */
   double *recvbuf;       /* buffer to hold received values */
   double *printbuf;      /* buffer to hold values for printing */
+  char hostname[MPI_MAX_PROCESSOR_NAME];  /* character array to hold hostname running process */
+
 
   // initialise our MPI environment
   MPI_Init( &argc, &argv);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank );
+
+  MPI_Get_processor_name(hostname,&strlen);
 
   printf("Hello, world; from host %s: process %d of %d\n", hostname, rank, size);
 
