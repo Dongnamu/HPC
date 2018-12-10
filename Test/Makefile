@@ -7,11 +7,10 @@ endif
 
 EXES = test
 
+all: $(EXES)
+
 test: test.c
 	$(CC) $(CFLAGS) -o $@ $^
 
-.PHONY: clean $(EXES)
-
 clean:
-	\rm -f $(EXES)
-	\rm -f *.o
+	\rm $(EXES)
