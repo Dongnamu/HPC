@@ -43,14 +43,14 @@ int main(int argc, char* argv[])
     fprintf(stderr,"Error: NDIMS assumed to be 2.\n");
     MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
   }
-  // if (size < (NDIMS * NDIMS)) {
-  //   fprintf(stderr,"Error: size assumed to be at least NDIMS * NDIMS, i.e. 4.\n");
-  //   MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-  // }
-  // if ((size % 2) > 0) {
-  //   fprintf(stderr,"Error: size assumed to be even.\n");
-  //   MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-  // }
+  if (size < (NDIMS * NDIMS)) {
+    fprintf(stderr,"Error: size assumed to be at least NDIMS * NDIMS, i.e. 4.\n");
+    MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+  }
+  if ((size % 2) > 0) {
+    fprintf(stderr,"Error: size assumed to be even.\n");
+    MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+  }
 
   /* Initialise the dims and periods arrays */
   for (ii=0; ii<NDIMS; ii++) {
@@ -94,10 +94,6 @@ int main(int argc, char* argv[])
   ** Setup the send buffer.  Each rank will send the Nth letter of the alphabet.
   ** Where N = rank.
   */
-
-  MPI_Cart_coords(comm_cart, myrank, NDIMS, coords);
-  MPI_Barrier(MPI_COMM_WORLD);
-  printf("rank %d has coordinates (%d,%d)\n", myrank, coords[0], coords[1]);
 
 
   for (ii=0; ii<NDIMS*2; ii++) {
