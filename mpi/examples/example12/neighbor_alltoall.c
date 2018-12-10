@@ -47,10 +47,10 @@ int main(int argc, char* argv[])
   //   fprintf(stderr,"Error: size assumed to be at least NDIMS * NDIMS, i.e. 4.\n");
   //   MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
   // }
-  if ((size % 2) > 0) {
-    fprintf(stderr,"Error: size assumed to be even.\n");
-    MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-  }
+  // if ((size % 2) > 0) {
+  //   fprintf(stderr,"Error: size assumed to be even.\n");
+  //   MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+  // }
 
   /* Initialise the dims and periods arrays */
   for (ii=0; ii<NDIMS; ii++) {
