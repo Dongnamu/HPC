@@ -5,12 +5,9 @@ ifeq ($(COMP), GNU)
   CFLAGS=-Wall
 endif
 
-EXE1=test.exe
-EXES=$(EXE1)
-
 all: $(EXES)
 
-$(EXES): %.exe : %.c
+test: test.c
 	$(CC) $(CFLAGS) -o $@ $^
 
 .PHONY: clean all
