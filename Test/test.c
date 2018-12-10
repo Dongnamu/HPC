@@ -25,10 +25,11 @@ int main(int argc, char *argv[]) {
 
   // initialise our MPI environment
   MPI_Init( &argc, &argv);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank );
 
   MPI_Get_processor_name(hostname,&strlen);
+
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank );
 
   printf("Hello, world; from host %s: process %d of %d\n", hostname, rank, size);
 
