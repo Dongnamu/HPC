@@ -9,7 +9,7 @@
 
 application="stencil"
 
-options = "1024 1024 100"
+options = "stencil 1024 1024 100"
 
 cd $PBS_O_WORKDIR
 
