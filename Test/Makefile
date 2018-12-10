@@ -1,11 +1,8 @@
 CC=mpicc
 
-COMP=GNU
-ifeq ($(COMP), GNU)
-  CFLAGS=-Wall
-endif
+CFLAGS=-Wall
 
-EXES = test
+EXES=test
 
 test: test.c
 	$(CC) $(CFLAGS) -o $@ $^
