@@ -1,6 +1,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/time.h>
 #include "mpi.h"
 
@@ -16,7 +17,7 @@ double wtime(void);
 
 int main(int argc, char *argv[]) {
   int ii;                /* generic counter */
-  int myrank;            /* the rank of this process */
+  int rank;            /* the rank of this process */
   int size;              /* number of processes in the communicator */
   int direction;         /* the coordinate dimension of a shift */
   int disp;              /* displacement, >1 is 'forwards', <1 is 'backwards' along a dimension */
