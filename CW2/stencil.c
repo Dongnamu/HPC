@@ -55,7 +55,6 @@ int main(int argc, char *argv[]) {
   int nx = atoi(argv[1]);
   int ny = atoi(argv[2]);
   int niters = atoi(argv[3]);
-  printf("I'm here\n");
 
   // Allocate the image
   float * restrict image = malloc(sizeof(float)*nx*ny);
@@ -68,8 +67,8 @@ int main(int argc, char *argv[]) {
   double tic = wtime();
 
   for (int t = 0; t < niters; ++t) {
-    // stencil(nx, ny, image, tmp_image);
-    // stencil(nx, ny, tmp_image, image);
+    stencil(nx, ny, image, tmp_image);
+    stencil(nx, ny, tmp_image, image);
   }
   double toc = wtime();
 
