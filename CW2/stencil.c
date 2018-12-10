@@ -13,39 +13,39 @@ void output_image(const char * file_name, const int nx, const int ny, float * re
 double wtime(void);
 
 int main(int argc, char *argv[]) {
-  // int rank; // rank of process among it's cohort
-  // int size; // size of cohort, i.e. num processess started
-  // int flag; // for checking whether MPI_Init() has been called
-  // int strlen; // length of a character array
-  // enum bool {FALSE, TRUE}; // enumerated type: false = 0, true = 1
-  // char hostname[MPI_MAX_PROCESSOR_NAME]; // character array to hold hostname running process
-  //
-  // // initialise our MPI environment
-  // MPI_Init( &argc, &argv);
-  //
-  // // check wheter the initialisation was successful
-  // MPI_Initialized(&flag);
-  //
-  // if (flag != TRUE) {
-  //   MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-  // }
-  //
-  // //determine the hostname
-  // MPI_Get_processor_name(hostname, &strlen);
-  //
-  // // determine the size of the group of processes associated with the 'communicator'.
-  // // default communicator is MPI_COMM_WORLD, consisting of all the processes in the launched MPI 'job'
-  // MPI_Comm_size( MPI_COMM_WORLD, &size );
-  //
-  // //determine the RANK of the current process [0: size - 1]
-  // MPI_Comm_rank( MPI_COMM_WORLD, &rank );
-  //
-  //
-  // // Check usage
-  // if (argc != 4) {
-  //   fprintf(stderr, "Usage: %s nx ny niters\n", argv[0]);
-  //   exit(EXIT_FAILURE);
-  // }
+  int rank; // rank of process among it's cohort
+  int size; // size of cohort, i.e. num processess started
+  int flag; // for checking whether MPI_Init() has been called
+  int strlen; // length of a character array
+  enum bool {FALSE, TRUE}; // enumerated type: false = 0, true = 1
+  char hostname[MPI_MAX_PROCESSOR_NAME]; // character array to hold hostname running process
+
+  // initialise our MPI environment
+  MPI_Init( &argc, &argv);
+
+  // check wheter the initialisation was successful
+  MPI_Initialized(&flag);
+
+  if (flag != TRUE) {
+    MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+  }
+
+  //determine the hostname
+  MPI_Get_processor_name(hostname, &strlen);
+
+  // determine the size of the group of processes associated with the 'communicator'.
+  // default communicator is MPI_COMM_WORLD, consisting of all the processes in the launched MPI 'job'
+  MPI_Comm_size( MPI_COMM_WORLD, &size );
+
+  //determine the RANK of the current process [0: size - 1]
+  MPI_Comm_rank( MPI_COMM_WORLD, &rank );
+
+
+  // Check usage
+  if (argc != 4) {
+    fprintf(stderr, "Usage: %s nx ny niters\n", argv[0]);
+    exit(EXIT_FAILURE);
+  }
 
   // Initiliase problem dimensions from command line arguments
   int nx = atoi(argv[1]);
@@ -77,9 +77,9 @@ int main(int argc, char *argv[]) {
   output_image(OUTPUT_FILE, nx, ny, image);
   free(image);
 
-  // MPI_Finalize();
+  MPI_Finalize();
 
-  // return EXIT_SUCCESS;
+  return EXIT_SUCCESS;
 }
 
 void stencil(const int nx, const int ny, float * restrict image, float * restrict tmp_image) {

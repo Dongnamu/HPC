@@ -28,8 +28,6 @@ int main(int argc, char* argv[])
   /* MPI_Init returns once it has started up processes */
   MPI_Init( &argc, &argv );
 
-  printf("This is this %s %s %s\n", argv[1], argv[2], argv[3]);
-
   /* size and rank will become ubiquitous */
   MPI_Comm_size( MPI_COMM_WORLD, &size );
   MPI_Comm_rank( MPI_COMM_WORLD, &myrank );
