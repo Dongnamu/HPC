@@ -13,22 +13,29 @@ void output_image(const char * file_name, const int nx, const int ny, float * re
 double wtime(void);
 
 int main(int argc, char *argv[]) {
-  int rank; // rank of process among it's cohort
-  int size; // size of cohort, i.e. num processess started
-  int flag; // for checking whether MPI_Init() has been called
-  int strlen; // length of a character array
-  enum bool {FALSE, TRUE}; // enumerated type: false = 0, true = 1
-  char hostname[MPI_MAX_PROCESSOR_NAME]; // character array to hold hostname running process
+  int ii,jj;             /* row and column indices for the grid */
+  int kk;                /* index for looping over ranks */
+  int rank;              /* the rank of this process */
+  int left;              /* the rank of the process to the left */
+  int right;             /* the rank of the process to the right */
+  int size;              /* number of processes in the communicator */
+  int tag = 0;           /* scope for adding extra information to a message */
+  MPI_Status status;     /* struct used by MPI_Recv */
+  int local_nrows;       /* number of rows apportioned to this rank */
+  int local_ncols;       /* number of columns apportioned to this rank */
+  int remote_ncols;      /* number of columns apportioned to a remote rank */
+  double *w;             /* local temperature grid at time t     */
+  double *sendbuf;       /* buffer to hold values to send */
+  double *recvbuf;       /* buffer to hold received values */
+  double *printbuf;      /* buffer to hold values for printing */
 
   // initialise our MPI environment
   MPI_Init( &argc, &argv);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_rank( MPI_COMM_WORLD, &rank );
+
 
   // check wheter the initialisation was successful
-  MPI_Initialized(&flag);
-
-  if (flag != TRUE) {
-    MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-  }
 
   //determine the hostname
   MPI_Get_processor_name(hostname, &strlen);
@@ -63,8 +70,8 @@ int main(int argc, char *argv[]) {
   double tic = wtime();
 
   for (int t = 0; t < niters; ++t) {
-    stencil(nx, ny, image, tmp_image);
-    stencil(nx, ny, tmp_image, image);
+    // stencil(nx, ny, image, tmp_image);
+    // stencil(nx, ny, tmp_image, image);
   }
   double toc = wtime();
 
