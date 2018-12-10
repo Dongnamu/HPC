@@ -9,7 +9,15 @@
 #define MASTER 0
 // Define output file name
 #define OUTPUT_FILE "stencil.pgm"
+#define TOP_LEFT = 1
+#define BOTTOM_LEFT = 0
 
+void top_left_corner(const int nx, const int ny, float * restrict image, float * restrict tmp_image);
+void bottom_left_corner(const int nx, const int ny, float * restrict image, float * restrict tmp_image);
+void top(const int nx, const int ny, float * restrict image, float * restrict tmp_image);
+void bottom(const int nx, const int ny, float * restrict image, float * restrict tmp_image);
+void top_right_corner(const int nx, const int ny, float * restrict image, float * restrict tmp_image);
+void bottom_right_corner(const int nx, const int ny, float * restrict image, float * restrict tmp_image);
 void stencil(const int nx, const int ny, float * restrict image, float * restrict tmp_image);
 void init_image(const int nx, const int ny, float * restrict image, float * restrict tmp_image);
 void output_image(const char * file_name, const int nx, const int ny, float * restrict image);
@@ -21,17 +29,25 @@ int main(int argc, char *argv[]) {
   int size;              /* number of processes in the communicator */
   int direction;         /* the coordinate dimension of a shift */
   int disp;              /* displacement, >1 is 'forwards', <1 is 'backwards' along a dimension */
+  int dest;
+  int source;
+  int tag = 0;
+  MPI_Status status;
+
   int north;             /* the rank of the process above this rank in the grid */
   int south;             /* the rank of the process below this rank in the grid */
   int east;              /* the rank of the process to the right of this rank in the grid */
   int west;              /* the rank of the process to the left of this rank in the grid */
+
+
   int reorder = 0;       /* an argument to MPI_Cart_create() */
   int dims[N_DIMENSION];       /* array to hold dimensions of an N_DIMENSION grid of processes */
   int periods[N_DIMENSION];    /* array to specificy periodic boundary conditions on each dimension */
   int coords[N_DIMENSION];     /* array to hold the grid coordinates for a rank */
   MPI_Comm comm_cart;    /* a cartesian topology aware communicator */
 
-
+  int top_right;
+  int bottom_right;
   // initialise our MPI environment
   MPI_Init( &argc, &argv);
 
@@ -82,6 +98,13 @@ int main(int argc, char *argv[]) {
 
   MPI_Barrier(MPI_COMM_WORLD);
   printf("rank: %d\n\tnorth=%d\n\tsouth=%d\n\teast=%d\n\twest=%d\n", rank,north,south,east,west);
+
+  if (rank == size - 1) {
+    print("I am here\n");
+  }
+
+
+
 
   // Check usage
   if (argc != 4) {
