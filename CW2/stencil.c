@@ -6,6 +6,7 @@
 #include "mpi.h"
 
 #define N_DIMENSION 2
+#define MASTER 0
 // Define output file name
 #define OUTPUT_FILE "stencil.pgm"
 
