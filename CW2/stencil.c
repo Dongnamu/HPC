@@ -32,11 +32,11 @@ int main(int argc, char *argv[]) {
   // initialise our MPI environment
   MPI_Init( &argc, &argv);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
-  MPI_Comm_rank( MPI_COMM_WORLD, &rank );
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank );
 
 
   // check wheter the initialisation was successful
-  
+
   // determine the size of the group of processes associated with the 'communicator'.
   // default communicator is MPI_COMM_WORLD, consisting of all the processes in the launched MPI 'job'
   MPI_Comm_size( MPI_COMM_WORLD, &size );
