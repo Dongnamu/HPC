@@ -19,7 +19,7 @@
 #PBS -m a
 
 #! application name
-application="./neighbor_alltoall.exe"
+application="./cartesian.exe"
 
 #! Run options for the application
 options=""
