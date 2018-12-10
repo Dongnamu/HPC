@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 // #include <sys/time.h>
-#include "mpi.h"
+#include <mpi.h>
 
 int main(int argc, char *argv[]) {
   // int ii,jj;             /* row and column indices for the grid */
