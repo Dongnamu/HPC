@@ -1,57 +1,54 @@
+/*
+** A very simple example MPI program, written in C
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
-// #include <sys/time.h>
-#include <mpi.h>
+/* "mpi.h" contains function prototypes and macros we'll need */
+#include "mpi.h"
 
-int main(int argc, char *argv[]) {
-  // int ii,jj;             /* row and column indices for the grid */
-  // int kk;                /* index for looping over ranks */
-  int rank;              /* the rank of this process */
-  // int left;              /* the rank of the process to the left */
-  // int right;             /* the rank of the process to the right */
-  int size;              /* number of processes in the communicator */
-  // int tag = 0;           /* scope for adding extra information to a message */
-  // MPI_Status status;     /* struct used by MPI_Recv */
-  // int local_nrows;       /* number of rows apportioned to this rank */
-  // int local_ncols;       /* number of columns apportioned to this rank */
-  // int remote_ncols;      /* number of columns apportioned to a remote rank */
-  // double *w;             /* local temperature grid at time t     */
-  // double *sendbuf;       /* buffer to hold values to send */
-  // double *recvbuf;       /* buffer to hold received values */
-  // double *printbuf;      /* buffer to hold values for printing */
-  char hostname[MPI_MAX_PROCESSOR_NAME];  /* character array to hold hostname running process */
-  int strlen;             /* length of a character array */
+
+int main(int argc, char* argv[])
+{
+  int rank;               /* 'rank' of process among it's cohort */
+  int size;               /* size of cohort, i.e. num processes started */
   int flag;               /* for checking whether MPI_Init() has been called */
+  int strlen;             /* length of a character array */
   enum bool {FALSE,TRUE}; /* enumerated type: false = 0, true = 1 */
+  char hostname[MPI_MAX_PROCESSOR_NAME];  /* character array to hold hostname running process */
 
-  printf("I'm here\n");
+  /* initialise our MPI environment */
+  MPI_Init( &argc, &argv );
 
-
-  // initialise our MPI environment
-  MPI_Init( &argc, &argv);
-  printf("I'm here1\n");
-
+  /* check whether the initialisation was successful */
   MPI_Initialized(&flag);
-  printf("I'm here2\n");
-
   if ( flag != TRUE ) {
     MPI_Abort(MPI_COMM_WORLD,EXIT_FAILURE);
   }
-  printf("I'm here3\n");
 
+  /* determine the hostname */
   MPI_Get_processor_name(hostname,&strlen);
-  printf("I'm here4\n");
 
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  printf("I'm here5\n");
+  /*
+  ** determine the SIZE of the group of processes associated with
+  ** the 'communicator'.  MPI_COMM_WORLD is the default communicator
+  ** consisting of all the processes in the launched MPI 'job'
+  */
+  MPI_Comm_size( MPI_COMM_WORLD, &size );
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank );
-  printf("I'm here6\n");
+  /* determine the RANK of the current process [0:SIZE-1] */
+  MPI_Comm_rank( MPI_COMM_WORLD, &rank );
 
+  /*
+  ** make use of these values in our print statement
+  ** note that we are assuming that all processes can
+  ** write to the screen
+  */
+  printf("Hello, world; from host %s: process %d of %d\n", hostname, rank, size);
 
-  // printf("Hello, world; from host %s: process %d of %d\n", hostname, rank, size);
-  printf("Printing\n");
+  /* finialise the MPI enviroment */
   MPI_Finalize();
 
+  /* and exit the program */
   return EXIT_SUCCESS;
 }
