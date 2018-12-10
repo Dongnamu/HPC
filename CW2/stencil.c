@@ -55,6 +55,7 @@ int main(int argc, char *argv[]) {
   int nx = atoi(argv[1]);
   int ny = atoi(argv[2]);
   int niters = atoi(argv[3]);
+  printf("I'm here\n");
 
   // Allocate the image
   float * restrict image = malloc(sizeof(float)*nx*ny);

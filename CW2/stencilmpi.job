@@ -12,7 +12,7 @@
 application="./stencil"
 
 #! Run options for the application
-options=""
+options="1024 1024 100"
 
 ###############################################################
 ### You should not have to change anything below this line ####
