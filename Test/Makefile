@@ -8,8 +8,8 @@ endif
 test: test.c
 	$(CC) $(CFLAGS) -o $@ $^
 
-.PHONY: clean all
+.PHONY: clean test
 
 clean:
-	\rm -f $(EXES)
+	\rm -f test
 	\rm -f *.o
