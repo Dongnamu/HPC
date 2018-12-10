@@ -24,20 +24,30 @@ int main(int argc, char *argv[]) {
   int flag;               /* for checking whether MPI_Init() has been called */
   enum bool {FALSE,TRUE}; /* enumerated type: false = 0, true = 1 */
 
+  print("I'm here\n");
 
 
   // initialise our MPI environment
   MPI_Init( &argc, &argv);
+  print("I'm here1\n");
 
   MPI_Initialized(&flag);
+  print("I'm here2\n");
+
   if ( flag != TRUE ) {
     MPI_Abort(MPI_COMM_WORLD,EXIT_FAILURE);
   }
+  print("I'm here3\n");
 
   MPI_Get_processor_name(hostname,&strlen);
+  print("I'm here4\n");
 
   MPI_Comm_size(MPI_COMM_WORLD, &size);
+  print("I'm here5\n");
+
   MPI_Comm_rank(MPI_COMM_WORLD, &rank );
+  print("I'm here6\n");
+
 
   // printf("Hello, world; from host %s: process %d of %d\n", hostname, rank, size);
   printf("Printing\n");
