@@ -5,11 +5,13 @@ ifeq ($(COMP), GNU)
   CFLAGS=-Wall
 endif
 
+EXES = test
+
 test: test.c
 	$(CC) $(CFLAGS) -o $@ $^
 
-.PHONY: clean test
+.PHONY: clean $(EXES)
 
 clean:
-	\rm -f test
+	\rm -f $(EXES)
 	\rm -f *.o
