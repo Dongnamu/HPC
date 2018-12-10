@@ -99,8 +99,8 @@ int main(int argc, char *argv[]) {
   MPI_Barrier(MPI_COMM_WORLD);
   printf("rank: %d\n\tnorth=%d\n\tsouth=%d\n\teast=%d\n\twest=%d\n", rank,north,south,east,west);
 
-  if (rank == size - 1) {
-    printf("I am here\n");
+  if (rank == (size - 1)) {
+    print("I am here\n");
   }
 
 
