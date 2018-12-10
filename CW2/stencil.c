@@ -25,9 +25,9 @@ int main(int argc, char *argv[]) {
   int east;              /* the rank of the process to the right of this rank in the grid */
   int west;              /* the rank of the process to the left of this rank in the grid */
   int reorder = 0;       /* an argument to MPI_Cart_create() */
-  int dims[NDIMS];       /* array to hold dimensions of an NDIMS grid of processes */
-  int periods[NDIMS];    /* array to specificy periodic boundary conditions on each dimension */
-  int coords[NDIMS];     /* array to hold the grid coordinates for a rank */
+  int dims[N_DIMENSION];       /* array to hold dimensions of an N_DIMENSION grid of processes */
+  int periods[N_DIMENSION];    /* array to specificy periodic boundary conditions on each dimension */
+  int coords[N_DIMENSION];     /* array to hold the grid coordinates for a rank */
   MPI_Comm comm_cart;    /* a cartesian topology aware communicator */
 
 
@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
     MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
   }
 
-  if (size < (NDIMS * NDIMS)) {
+  if (size < (N_DIMENSION * N_DIMENSION)) {
     fprintf(stderr,"Error: size assumed to be at least N_DIMENSION * N_DIMENSION, i.e. 4.\n");
     MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
   }
@@ -56,19 +56,19 @@ int main(int argc, char *argv[]) {
     MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
   }
 
-  for (ii=0; ii<NDIMS; ii++) {
+  for (ii=0; ii<N_DIMENSION; ii++) {
     dims[ii] = 0;
     periods[ii] = 1; /* set periodic boundary conditions to True for all dimensions */
   }
 
-  MPI_Dims_create(size, NDIMS, dims);
+  MPI_Dims_create(size, N_DIMENSION, dims);
   if(myrank == MASTER) {
-    printf("ranks spread over a grid of %d dimension(s): [%d,%d]\n", NDIMS, dims[0], dims[1]);
+    printf("ranks spread over a grid of %d dimension(s): [%d,%d]\n", N_DIMENSION, dims[0], dims[1]);
   }
 
-  MPI_Cart_create(MPI_COMM_WORLD, NDIMS, dims, periods, reorder, &comm_cart);
+  MPI_Cart_create(MPI_COMM_WORLD, N_DIMENSION, dims, periods, reorder, &comm_cart);
 
-  MPI_Cart_coords(comm_cart, myrank, NDIMS, coords);
+  MPI_Cart_coords(comm_cart, myrank, N_DIMENSION, coords);
   MPI_Barrier(MPI_COMM_WORLD);
   printf("rank %d has coordinates (%d,%d)\n", myrank, coords[0], coords[1]);
 
