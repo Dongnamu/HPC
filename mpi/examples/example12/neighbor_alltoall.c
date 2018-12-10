@@ -24,6 +24,7 @@ int main(int argc, char* argv[])
   MPI_Comm comm_cart;    /* a cartesian topology aware communicator */
   char sendbuf[BUFSIZ];  /* buffer to hold data to be sent to other ranks */
   char recvbuf[BUFSIZ];  /* buffer to hold data which is recieved from other ranks */
+  int coords[NDIMS];     /* array to hold the grid coordinates for a rank */
 
   /* MPI_Init returns once it has started up processes */
   MPI_Init( &argc, &argv );
@@ -97,7 +98,7 @@ int main(int argc, char* argv[])
   MPI_Barrier(MPI_COMM_WORLD);
   printf("rank %d has coordinates (%d,%d)\n", myrank, coords[0], coords[1]);
 
-  
+
   for (ii=0; ii<NDIMS*2; ii++) {
     sendbuf[ii] = alphabet[myrank];
   }
