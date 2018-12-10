@@ -4,6 +4,8 @@
 #include <sys/time.h>
 #include "mpi.h"
 
+#define N_DIMENSION 2
+#define MASTER 0
 // Define output file name
 #define OUTPUT_FILE "stencil.pgm"
 
@@ -13,21 +15,21 @@ void output_image(const char * file_name, const int nx, const int ny, float * re
 double wtime(void);
 
 int main(int argc, char *argv[]) {
-  int ii,jj;             /* row and column indices for the grid */
-  int kk;                /* index for looping over ranks */
-  int rank;              /* the rank of this process */
-  int left;              /* the rank of the process to the left */
-  int right;             /* the rank of the process to the right */
+  int ii;                /* generic counter */
+  int myrank;            /* the rank of this process */
   int size;              /* number of processes in the communicator */
-  int tag = 0;           /* scope for adding extra information to a message */
-  MPI_Status status;     /* struct used by MPI_Recv */
-  int local_nrows;       /* number of rows apportioned to this rank */
-  int local_ncols;       /* number of columns apportioned to this rank */
-  int remote_ncols;      /* number of columns apportioned to a remote rank */
-  double *w;             /* local temperature grid at time t     */
-  double *sendbuf;       /* buffer to hold values to send */
-  double *recvbuf;       /* buffer to hold received values */
-  double *printbuf;      /* buffer to hold values for printing */
+  int direction;         /* the coordinate dimension of a shift */
+  int disp;              /* displacement, >1 is 'forwards', <1 is 'backwards' along a dimension */
+  int north;             /* the rank of the process above this rank in the grid */
+  int south;             /* the rank of the process below this rank in the grid */
+  int east;              /* the rank of the process to the right of this rank in the grid */
+  int west;              /* the rank of the process to the left of this rank in the grid */
+  int reorder = 0;       /* an argument to MPI_Cart_create() */
+  int dims[NDIMS];       /* array to hold dimensions of an NDIMS grid of processes */
+  int periods[NDIMS];    /* array to specificy periodic boundary conditions on each dimension */
+  int coords[NDIMS];     /* array to hold the grid coordinates for a rank */
+  MPI_Comm comm_cart;    /* a cartesian topology aware communicator */
+
 
   // initialise our MPI environment
   MPI_Init( &argc, &argv);
@@ -38,10 +40,47 @@ int main(int argc, char *argv[]) {
   // determine the size of the group of processes associated with the 'communicator'.
   // default communicator is MPI_COMM_WORLD, consisting of all the processes in the launched MPI 'job'
   MPI_Comm_size( MPI_COMM_WORLD, &size );
-
-  //determine the RANK of the current process [0: size - 1]
   MPI_Comm_rank( MPI_COMM_WORLD, &rank );
 
+  if (N_DIMENSION != 2) {
+    fprinf(stderr, "Error: number of dimension is asuumed to be 2\n");
+    MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+  }
+
+  if (size < (NDIMS * NDIMS)) {
+    fprintf(stderr,"Error: size assumed to be at least N_DIMENSION * N_DIMENSION, i.e. 4.\n");
+    MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+  }
+  if ((size % 2) > 0) {
+    fprintf(stderr,"Error: size assumed to be even.\n");
+    MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+  }
+
+  for (ii=0; ii<NDIMS; ii++) {
+    dims[ii] = 0;
+    periods[ii] = 1; /* set periodic boundary conditions to True for all dimensions */
+  }
+
+  MPI_Dims_create(size, NDIMS, dims);
+  if(myrank == MASTER) {
+    printf("ranks spread over a grid of %d dimension(s): [%d,%d]\n", NDIMS, dims[0], dims[1]);
+  }
+
+  MPI_Cart_create(MPI_COMM_WORLD, NDIMS, dims, periods, reorder, &comm_cart);
+
+  MPI_Cart_coords(comm_cart, myrank, NDIMS, coords);
+  MPI_Barrier(MPI_COMM_WORLD);
+  printf("rank %d has coordinates (%d,%d)\n", myrank, coords[0], coords[1]);
+
+  direction = 0;
+  disp = 1;
+  MPI_Cart_shift(comm_cart, direction, disp, &west, &east);
+  direction = 1;
+  disp = 1;
+  MPI_Cart_shift(comm_cart, direction, disp, &south, &north);
+
+  MPI_Barrier(MPI_COMM_WORLD);
+  printf("rank: %d\n\tnorth=%d\n\tsouth=%d\n\teast=%d\n\twest=%d\n", myrank,north,south,east,west);
 
   // Check usage
   if (argc != 4) {
