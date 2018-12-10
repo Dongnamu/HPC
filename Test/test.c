@@ -21,10 +21,17 @@ int main(int argc, char *argv[]) {
   // double *printbuf;      /* buffer to hold values for printing */
   char hostname[MPI_MAX_PROCESSOR_NAME];  /* character array to hold hostname running process */
   int strlen;             /* length of a character array */
+  int flag;               /* for checking whether MPI_Init() has been called */
+
 
 
   // initialise our MPI environment
   MPI_Init( &argc, &argv);
+
+  MPI_Initialized(&flag);
+  if ( flag != TRUE ) {
+    MPI_Abort(MPI_COMM_WORLD,EXIT_FAILURE);
+  }
 
   MPI_Get_processor_name(hostname,&strlen);
 
