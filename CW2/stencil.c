@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
   MPI_Comm_rank( MPI_COMM_WORLD, &rank );
 
   if (N_DIMENSION != 2) {
-    fprinf(stderr, "Error: number of dimension is asuumed to be 2\n");
+    fprintf(stderr, "Error: number of dimension is asuumed to be 2\n");
     MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
   }
 
