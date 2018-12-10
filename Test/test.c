@@ -22,6 +22,7 @@ int main(int argc, char *argv[]) {
   char hostname[MPI_MAX_PROCESSOR_NAME];  /* character array to hold hostname running process */
   int strlen;             /* length of a character array */
   int flag;               /* for checking whether MPI_Init() has been called */
+  enum bool {FALSE,TRUE}; /* enumerated type: false = 0, true = 1 */
 
 
 
