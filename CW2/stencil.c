@@ -27,6 +27,7 @@ int main(int argc, char *argv[]) {
   int ii;                /* generic counter */
   int rank;            /* the rank of this process */
   int size;              /* number of processes in the communicator */
+  int size_copy;
   int direction;         /* the coordinate dimension of a shift */
   int disp;              /* displacement, >1 is 'forwards', <1 is 'backwards' along a dimension */
   int dest;
@@ -58,9 +59,10 @@ int main(int argc, char *argv[]) {
   // default communicator is MPI_COMM_WORLD, consisting of all the processes in the launched MPI 'job'
   MPI_Comm_size( MPI_COMM_WORLD, &size );
   MPI_Comm_rank( MPI_COMM_WORLD, &rank );
+  size_copy = &size;
 
   if (N_DIMENSION != 2) {
-    fprintf(stderr, "Error: number of dimension is asuumed to be 2\n");
+    fprintf(stderr, "Error: number of dimension is assumed to be 2\n");
     MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
   }
 
