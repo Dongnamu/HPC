@@ -15,4 +15,5 @@ all: $(EXES)
 .PHONY: clean all
 
 clean:
-	\rm $(EXES)
+	\rm -f $(EXES)
+	\rm -f *.o
