@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
   printf("rank: %d\n\tnorth=%d\n\tsouth=%d\n\teast=%d\n\twest=%d\n", rank,north,south,east,west);
 
   if (rank == (size - 1)) {
-    printf("I am here\n");
+    printf("I am rank %d\n", rank);
   }
 
 
