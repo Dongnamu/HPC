@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
   ** and adapt other aspects of the code.
   */
 
-  printf("Size is %d\n", size);
+  // printf("Size is %d\n", size);
 
 
   if (NDIMS != 2) {

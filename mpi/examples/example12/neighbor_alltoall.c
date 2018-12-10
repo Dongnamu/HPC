@@ -33,7 +33,7 @@ int main(int argc, char* argv[])
   MPI_Comm_size( MPI_COMM_WORLD, &size );
   MPI_Comm_rank( MPI_COMM_WORLD, &myrank );
 
-  printf("Size is %d\n", size);
+  // printf("Size is %d\n", size);
   /* Some constraints on the number of dimensions and processes
   ** help to keep this example relatively simple.  If you decide
   ** to experiment, you will likely need to relax these constraints
