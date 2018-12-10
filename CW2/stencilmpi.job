@@ -7,9 +7,9 @@
 #PBS -lnodes=1:ppn=16
 #PBS -lwalltime=00:01:00
 
-application="stencil"
+application="./stencil"
 
-options = "stencil 1024 1024 100"
+options = "1024 1024 100"
 
 cd $PBS_O_WORKDIR
 
