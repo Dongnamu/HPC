@@ -36,10 +36,7 @@ int main(int argc, char *argv[]) {
 
 
   // check wheter the initialisation was successful
-
-  //determine the hostname
-  MPI_Get_processor_name(hostname, &strlen);
-
+  
   // determine the size of the group of processes associated with the 'communicator'.
   // default communicator is MPI_COMM_WORLD, consisting of all the processes in the launched MPI 'job'
   MPI_Comm_size( MPI_COMM_WORLD, &size );
