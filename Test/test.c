@@ -20,6 +20,7 @@ int main(int argc, char *argv[]) {
   double *recvbuf;       /* buffer to hold received values */
   double *printbuf;      /* buffer to hold values for printing */
   char hostname[MPI_MAX_PROCESSOR_NAME];  /* character array to hold hostname running process */
+  int strlen;             /* length of a character array */
 
 
   // initialise our MPI environment
