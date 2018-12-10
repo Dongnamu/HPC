@@ -63,15 +63,15 @@ int main(int argc, char *argv[]) {
   }
 
   MPI_Dims_create(size, N_DIMENSION, dims);
-  if(myrank == MASTER) {
+  if(rank == MASTER) {
     printf("ranks spread over a grid of %d dimension(s): [%d,%d]\n", N_DIMENSION, dims[0], dims[1]);
   }
 
   MPI_Cart_create(MPI_COMM_WORLD, N_DIMENSION, dims, periods, reorder, &comm_cart);
 
-  MPI_Cart_coords(comm_cart, myrank, N_DIMENSION, coords);
+  MPI_Cart_coords(comm_cart, rank, N_DIMENSION, coords);
   MPI_Barrier(MPI_COMM_WORLD);
-  printf("rank %d has coordinates (%d,%d)\n", myrank, coords[0], coords[1]);
+  printf("rank %d has coordinates (%d,%d)\n", rank, coords[0], coords[1]);
 
   direction = 0;
   disp = 1;
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
   MPI_Cart_shift(comm_cart, direction, disp, &south, &north);
 
   MPI_Barrier(MPI_COMM_WORLD);
-  printf("rank: %d\n\tnorth=%d\n\tsouth=%d\n\teast=%d\n\twest=%d\n", myrank,north,south,east,west);
+  printf("rank: %d\n\tnorth=%d\n\tsouth=%d\n\teast=%d\n\twest=%d\n", rank,north,south,east,west);
 
   // Check usage
   if (argc != 4) {
