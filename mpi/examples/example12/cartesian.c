@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "mpi.h" 
+#include "mpi.h"
 
 #define NDIMS 2  /* setting the number of dimensions in the grid with a macro */
 #define MASTER 0
@@ -31,7 +31,7 @@ int main(int argc, char* argv[])
   /* MPI_Init returns once it has started up processes */
   MPI_Init( &argc, &argv );
 
-  /* size and rank will become ubiquitous */ 
+  /* size and rank will become ubiquitous */
   MPI_Comm_size( MPI_COMM_WORLD, &size );
   MPI_Comm_rank( MPI_COMM_WORLD, &myrank );
 
@@ -40,6 +40,10 @@ int main(int argc, char* argv[])
   ** to experiment, you will likely need to relax these constraints
   ** and adapt other aspects of the code.
   */
+
+  printf("Size is %d\n", size);
+
+
   if (NDIMS != 2) {
     fprintf(stderr,"Error: NDIMS assumed to be 2.\n");
     MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
