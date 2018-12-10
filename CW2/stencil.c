@@ -6,7 +6,6 @@
 #include "mpi.h"
 
 #define N_DIMENSION 2
-#define MASTER 0
 // Define output file name
 #define OUTPUT_FILE "stencil.pgm"
 
@@ -124,6 +123,231 @@ int main(int argc, char *argv[]) {
   return EXIT_SUCCESS;
 }
 
+void top_left_corner(const int nx, const int ny, float * restrict image, float * restrict tmp_image) {
+  float initialMul = 0.6f;
+  float Mul = 0.1f;
+  float numberToadd = 0.0f;
+
+  // when i = 0, j = 0
+
+  numberToadd = image[0] * initialMul;
+  numberToadd += image[ny] * Mul;
+  numberToadd += image[1] * Mul;
+  tmp_image[0] = numberToadd;
+
+  // when i = 0, 0 < j < ny - 1
+  for (int j = 1; j < ny - 1; j++) {
+    numberToadd = image[j] * initialMul;
+    numberToadd += image[j + ny] * Mul;
+    numberToadd += image[j-1] * Mul;
+    numberToadd += image[j+1] * Mul;
+    tmp_image[j] = numberToadd;
+
+  }
+
+  // when 0 < i < nx -1, j = 0
+  for (int i = 1; i < nx - 1; i++) {
+    numberToadd = image[i * ny] * initialMul;
+    numberToadd += image[(i-1) * ny] * Mul;
+    numberToadd += image[(i+1) * ny] * Mul;
+    numberToadd += image[1 + i * ny] * Mul;
+    tmp_image[i * ny] = numberToadd;
+  }
+
+  for (int i = 1; i < nx - 1; i++) {
+    for (int j = 1; j < ny - 1; j++) {
+      tmp_image[j+i*ny] = image[j+i*ny] * initialMul;
+      tmp_image[j+i*ny] += image[j  +(i-1)*ny] * Mul;
+      tmp_image[j+i*ny] += image[j  +(i+1)*ny] * Mul;
+      tmp_image[j+i*ny] += image[j-1+i*ny] * Mul;
+      tmp_image[j+i*ny] += image[j+1+i*ny] * Mul;
+
+      // tmp_image[j+i*ny] = numberToadd;
+    }
+  }
+
+
+
+}
+
+void bottom_left_corner(const int nx, const int ny, float * restrict image, float * restrict tmp_image) {
+  float initialMul = 0.6f;
+  float Mul = 0.1f;
+  float numberToadd = 0.0f;
+
+  // when i = nx - 1, j = 0
+  numberToadd = image[(nx - 1) * ny] * initialMul;
+  numberToadd += image[(ny - 2) * ny] * Mul;
+  numberToadd += image[1 + (nx - 1) * ny] * Mul;
+  tmp_image[(ny - 1) * ny] = numberToadd;
+
+  // when 0 < i < nx -1, j = 0
+  for (int i = 1; i < nx - 1; i++) {
+    numberToadd = image[i * ny] * initialMul;
+    numberToadd += image[(i-1) * ny] * Mul;
+    numberToadd += image[(i+1) * ny] * Mul;
+    numberToadd += image[1 + i * ny] * Mul;
+    tmp_image[i * ny] = numberToadd;
+  }
+
+  for (int j = 1; j < ny - 1; j++) {
+    numberToadd = image[j+(nx-1)*ny] * initialMul;
+    numberToadd += image[j+(nx-2)*ny] * Mul;
+    numberToadd += image[j-1+(nx-1)*ny] * Mul;
+    numberToadd += image[j+1+(nx-1)*ny] * Mul;
+    tmp_image[j+(nx-1)*ny] = numberToadd;
+  }
+
+  for (int i = 1; i < nx - 1; i++) {
+    for (int j = 1; j < ny - 1; j++) {
+      tmp_image[j+i*ny] = image[j+i*ny] * initialMul;
+      tmp_image[j+i*ny] += image[j  +(i-1)*ny] * Mul;
+      tmp_image[j+i*ny] += image[j  +(i+1)*ny] * Mul;
+      tmp_image[j+i*ny] += image[j-1+i*ny] * Mul;
+      tmp_image[j+i*ny] += image[j+1+i*ny] * Mul;
+
+      // tmp_image[j+i*ny] = numberToadd;
+    }
+  }
+
+}
+
+void top(const int nx, const int ny, float * restrict image, float * restrict tmp_image) {
+  float initialMul = 0.6f;
+  float Mul = 0.1f;
+  float numberToadd = 0.0f;
+
+  for (int j = 1; j < ny - 1; j++) {
+    numberToadd = image[j] * initialMul;
+    numberToadd += image[j + ny] * Mul;
+    numberToadd += image[j-1] * Mul;
+    numberToadd += image[j+1] * Mul;
+    tmp_image[j] = numberToadd;
+  }
+
+  for (int i = 1; i < nx - 1; i++) {
+    for (int j = 1; j < ny - 1; j++) {
+      tmp_image[j+i*ny] = image[j+i*ny] * initialMul;
+      tmp_image[j+i*ny] += image[j  +(i-1)*ny] * Mul;
+      tmp_image[j+i*ny] += image[j  +(i+1)*ny] * Mul;
+      tmp_image[j+i*ny] += image[j-1+i*ny] * Mul;
+      tmp_image[j+i*ny] += image[j+1+i*ny] * Mul;
+
+      // tmp_image[j+i*ny] = numberToadd;
+    }
+  }
+}
+
+void bottom(const int nx, const int ny, float * restrict image, float * restrict tmp_image) {
+  float initialMul = 0.6f;
+  float Mul = 0.1f;
+  float numberToadd = 0.0f;
+
+  for (int j = 1; j < ny - 1; j++) {
+    numberToadd = image[j+(nx-1)*ny] * initialMul;
+  	numberToadd += image[j+(nx-2)*ny] * Mul;
+  	numberToadd += image[j-1+(nx-1)*ny] * Mul;
+  	numberToadd += image[j+1+(nx-1)*ny] * Mul;
+  	tmp_image[j+(nx-1)*ny] = numberToadd;
+  }
+
+  for (int i = 1; i < nx - 1; i++) {
+    for (int j = 1; j < ny - 1; j++) {
+      tmp_image[j+i*ny] = image[j+i*ny] * initialMul;
+      tmp_image[j+i*ny] += image[j  +(i-1)*ny] * Mul;
+      tmp_image[j+i*ny] += image[j  +(i+1)*ny] * Mul;
+      tmp_image[j+i*ny] += image[j-1+i*ny] * Mul;
+      tmp_image[j+i*ny] += image[j+1+i*ny] * Mul;
+
+      // tmp_image[j+i*ny] = numberToadd;
+    }
+  }
+
+}
+
+void top_right_corner(const int nx, const int ny, float * restrict image, float * restrict tmp_image) {
+  float initialMul = 0.6f;
+  float Mul = 0.1f;
+  float numberToadd = 0.0f;
+
+  // when i = nx - 1, j = 0
+  numberToadd = image[(nx - 1) * ny] * initialMul;
+  numberToadd += image[(ny - 2) * ny] * Mul;
+  numberToadd += image[1 + (nx - 1) * ny] * Mul;
+  tmp_image[(ny - 1) * ny] = numberToadd;
+
+  for (int j = 1; j < ny - 1; j++) {
+  	numberToadd = image[j] * initialMul;
+  	numberToadd += image[j + ny] * Mul;
+  	numberToadd += image[j-1] * Mul;
+  	numberToadd += image[j+1] * Mul;
+  	tmp_image[j] = numberToadd;
+  }
+
+  for (int i = 1; i < nx - 1; i++) {
+    numberToadd = image[(ny - 1) + i * ny] * initialMul;
+  	numberToadd += image[(ny - 1) + (i - 1) * ny] * Mul;
+  	numberToadd += image[(ny - 1) + (i + 1) * ny] * Mul;
+  	numberToadd += image[(ny - 2) + i * ny] * Mul;
+  	tmp_image[(ny - 1) + i * ny] = numberToadd;
+  }
+
+  for (int i = 1; i < nx - 1; i++) {
+    for (int j = 1; j < ny - 1; j++) {
+      tmp_image[j+i*ny] = image[j+i*ny] * initialMul;
+      tmp_image[j+i*ny] += image[j  +(i-1)*ny] * Mul;
+      tmp_image[j+i*ny] += image[j  +(i+1)*ny] * Mul;
+      tmp_image[j+i*ny] += image[j-1+i*ny] * Mul;
+      tmp_image[j+i*ny] += image[j+1+i*ny] * Mul;
+
+      // tmp_image[j+i*ny] = numberToadd;
+    }
+  }
+
+}
+
+void bottom_right_corner(const int nx, const int ny, float * restrict image, float * restrict tmp_image) {
+  float initialMul = 0.6f;
+  float Mul = 0.1f;
+  float numberToadd = 0.0f;
+
+  // when i = nx - 1,  j = ny - 1
+  numberToadd = image[(ny - 1) + (nx - 1) * ny] * initialMul;
+  numberToadd += image[(ny - 1) + (nx - 2) * ny] * Mul;
+  numberToadd += image[(ny - 2) + (nx - 1) * ny] * Mul;
+  tmp_image[(ny - 1) + (nx - 1) * ny] = numberToadd;
+
+  for (int j = 1; j < ny - 1; j++) {
+    numberToadd = image[j+(nx-1)*ny] * initialMul;
+  	numberToadd += image[j+(nx-2)*ny] * Mul;
+  	numberToadd += image[j-1+(nx-1)*ny] * Mul;
+  	numberToadd += image[j+1+(nx-1)*ny] * Mul;
+  	tmp_image[j+(nx-1)*ny] = numberToadd;
+  }
+
+  for (int i = 1; i < nx - 1; i++) {
+    numberToadd = image[(ny - 1) + i * ny] * initialMul;
+  	numberToadd += image[(ny - 1) + (i - 1) * ny] * Mul;
+  	numberToadd += image[(ny - 1) + (i + 1) * ny] * Mul;
+  	numberToadd += image[(ny - 2) + i * ny] * Mul;
+  	tmp_image[(ny - 1) + i * ny] = numberToadd;
+  }
+
+  for (int i = 1; i < nx - 1; i++) {
+    for (int j = 1; j < ny - 1; j++) {
+      tmp_image[j+i*ny] = image[j+i*ny] * initialMul;
+      tmp_image[j+i*ny] += image[j  +(i-1)*ny] * Mul;
+      tmp_image[j+i*ny] += image[j  +(i+1)*ny] * Mul;
+      tmp_image[j+i*ny] += image[j-1+i*ny] * Mul;
+      tmp_image[j+i*ny] += image[j+1+i*ny] * Mul;
+
+      // tmp_image[j+i*ny] = numberToadd;
+    }
+  }
+
+}
+
+
 void stencil(const int nx, const int ny, float * restrict image, float * restrict tmp_image) {
   float initialMul = 0.6f;
 
@@ -158,30 +382,30 @@ void stencil(const int nx, const int ny, float * restrict image, float * restric
   // when i = 0, 0 < j < ny - 1, when i = nx - 1, 0 < j < ny - 1
 
   for (int j = 1; j < ny - 1; j++) {
-	numberToadd = image[j] * initialMul;
-	numberToadd += image[j + ny] * Mul;
-	numberToadd += image[j-1] * Mul;
-	numberToadd += image[j+1] * Mul;
-	tmp_image[j] = numberToadd;
-	numberToadd = image[j+(nx-1)*ny] * initialMul;
-	numberToadd += image[j+(nx-2)*ny] * Mul;
-	numberToadd += image[j-1+(nx-1)*ny] * Mul;
-	numberToadd += image[j+1+(nx-1)*ny] * Mul;
-	tmp_image[j+(nx-1)*ny] = numberToadd;
+  	numberToadd = image[j] * initialMul;
+  	numberToadd += image[j + ny] * Mul;
+  	numberToadd += image[j-1] * Mul;
+  	numberToadd += image[j+1] * Mul;
+  	tmp_image[j] = numberToadd;
+  	numberToadd = image[j+(nx-1)*ny] * initialMul;
+  	numberToadd += image[j+(nx-2)*ny] * Mul;
+  	numberToadd += image[j-1+(nx-1)*ny] * Mul;
+  	numberToadd += image[j+1+(nx-1)*ny] * Mul;
+  	tmp_image[j+(nx-1)*ny] = numberToadd;
   }
   // when 0 < i < nx -1, j = 0 and when 0 < i < nx - 1, j = ny - 1
 
   for (int i = 1; i < nx - 1; i++) {
-	numberToadd = image[i * ny] * initialMul;
-	numberToadd += image[(i-1) * ny] * Mul;
-	numberToadd += image[(i+1) * ny] * Mul;
-	numberToadd += image[1 + i * ny] * Mul;
-	tmp_image[i * ny] = numberToadd;
-	numberToadd = image[(ny - 1) + i * ny] * initialMul;
-	numberToadd += image[(ny - 1) + (i - 1) * ny] * Mul;
-	numberToadd += image[(ny - 1) + (i + 1) * ny] * Mul;
-	numberToadd += image[(ny - 2) + i * ny] * Mul;
-	tmp_image[(ny - 1) + i * ny] = numberToadd;
+  	numberToadd = image[i * ny] * initialMul;
+  	numberToadd += image[(i-1) * ny] * Mul;
+  	numberToadd += image[(i+1) * ny] * Mul;
+  	numberToadd += image[1 + i * ny] * Mul;
+  	tmp_image[i * ny] = numberToadd;
+  	numberToadd = image[(ny - 1) + i * ny] * initialMul;
+  	numberToadd += image[(ny - 1) + (i - 1) * ny] * Mul;
+  	numberToadd += image[(ny - 1) + (i + 1) * ny] * Mul;
+  	numberToadd += image[(ny - 2) + i * ny] * Mul;
+  	tmp_image[(ny - 1) + i * ny] = numberToadd;
   }
 
 
@@ -193,7 +417,7 @@ void stencil(const int nx, const int ny, float * restrict image, float * restric
       tmp_image[j+i*ny] += image[j-1+i*ny] * Mul;
       tmp_image[j+i*ny] += image[j+1+i*ny] * Mul;
 
-      //tmp_image[j+i*ny] = numberToadd;
+      // tmp_image[j+i*ny] = numberToadd;
     }
   }
 }
