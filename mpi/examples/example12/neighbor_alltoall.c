@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "mpi.h" 
+#include "mpi.h"
 
 #define NDIMS 2  /* setting the number of dimensions in the grid with a macro */
 #define MASTER 0
@@ -23,12 +23,12 @@ int main(int argc, char* argv[])
   int periods[NDIMS];    /* array to specificy periodic boundary conditions on each dimension */
   MPI_Comm comm_cart;    /* a cartesian topology aware communicator */
   char sendbuf[BUFSIZ];  /* buffer to hold data to be sent to other ranks */
-  char recvbuf[BUFSIZ];  /* buffer to hold data which is recieved from other ranks */ 
+  char recvbuf[BUFSIZ];  /* buffer to hold data which is recieved from other ranks */
 
   /* MPI_Init returns once it has started up processes */
   MPI_Init( &argc, &argv );
 
-  /* size and rank will become ubiquitous */ 
+  /* size and rank will become ubiquitous */
   MPI_Comm_size( MPI_COMM_WORLD, &size );
   MPI_Comm_rank( MPI_COMM_WORLD, &myrank );
 
@@ -90,8 +90,14 @@ int main(int argc, char* argv[])
 
   /*
   ** Setup the send buffer.  Each rank will send the Nth letter of the alphabet.
-  ** Where N = rank. 
+  ** Where N = rank.
   */
+
+  MPI_Cart_coords(comm_cart, myrank, NDIMS, coords);
+  MPI_Barrier(MPI_COMM_WORLD);
+  printf("rank %d has coordinates (%d,%d)\n", myrank, coords[0], coords[1]);
+
+  
   for (ii=0; ii<NDIMS*2; ii++) {
     sendbuf[ii] = alphabet[myrank];
   }
