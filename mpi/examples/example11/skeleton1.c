@@ -4,7 +4,7 @@
 **
 **    ---       ---       ---       ---
 **   |   |     |   |     |   |     |   |
-** <-| 0 | <-> | 1 | <-> | 2 | <-> | 3 | -> 
+** <-| 0 | <-> | 1 | <-> | 2 | <-> | 3 | ->
 **   |   |     |   |     |   |     |   |
 **    ---       ---       ---       ---
 */
@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "mpi.h" 
+#include "mpi.h"
 
 int main(int argc, char* argv[])
 {
@@ -28,11 +28,13 @@ int main(int argc, char* argv[])
   /* MPI_Init returns once it has started up processes */
   MPI_Init( &argc, &argv );
 
-  /* size and rank will become ubiquitous */ 
+  printf("This is this %s %s %s\n", argv[1], argv[2], argv[3]);
+
+  /* size and rank will become ubiquitous */
   MPI_Comm_size( MPI_COMM_WORLD, &size );
   MPI_Comm_rank( MPI_COMM_WORLD, &myrank );
 
-  /* 
+  /*
   ** Example constrained to a maximum of 4 processes
   ** (will work with fewer).
   ** However, the communication pattern will work for
@@ -43,7 +45,7 @@ int main(int argc, char* argv[])
     MPI_Abort(MPI_COMM_WORLD,1);
   }
 
-  /* 
+  /*
   ** determine process ranks to the left and right of myrank
   ** respecting periodic boundary conditions
   */
