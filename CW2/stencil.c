@@ -60,9 +60,6 @@ int main(int argc, char *argv[]) {
   // initialise our MPI environment
   MPI_Init( &argc, &argv);
 
-  printf("I'm here 0\n");
-
-
   // check wheter the initialisation was successful
 
   // determine the size of the group of processes associated with the 'communicator'.
@@ -184,8 +181,11 @@ int main(int argc, char *argv[]) {
   }
 
   free(image0);
-  printf("I'm here\n");
 
+  if (rank == MASTER) {
+    printf("I'm here\n");
+  }
+  
   MPI_Finalize();
 
   return EXIT_SUCCESS;
