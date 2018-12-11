@@ -306,7 +306,7 @@ int main(int argc, char *argv[]) {
 
 
   if (rank == 2){
-    output_image("RANK2.pgm", local_nrows, local_ncols, image);
+    output_image("RANK2.pgm", local_nrows, local_ncols, image_pad);
   }
 
   free(image);
