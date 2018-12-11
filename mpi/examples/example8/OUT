@@ -1,0 +1,21 @@
+Running on host node31-032
+Time is Mon Dec 10 12:32:37 GMT 2018
+Directory is /panfs/panasas01/cosc/js16397/HPC/mpi/examples/example8
+PBS job ID is 7803595.master.cm.cluster
+This jobs runs on the following machines:
+node31-032
+rank 0:	local_n 5
+rank 0:	local_a 0.000000, local_b 0.250000
+rank 0:	local_sum 0.979545
+
+Definite integral from 0.000000 to 1.000000 estimated as 3.141176 (using 20 trapezoids)
+(error: 0.0004166666356644)
+rank 1:	local_n 5
+rank 1:	local_a 0.250000, local_b 0.500000
+rank 1:	local_sum 0.874512
+rank 2:	local_n 5
+rank 2:	local_a 0.500000, local_b 0.750000
+rank 2:	local_sum 0.719435
+rank 3:	local_n 5
+rank 3:	local_a 0.750000, local_b 1.000000
+rank 3:	local_sum 0.567684

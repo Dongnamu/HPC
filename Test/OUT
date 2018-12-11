@@ -1,0 +1,13 @@
+Running on host node31-030
+Time is Mon Dec 10 13:31:23 GMT 2018
+Directory is /panfs/panasas01/cosc/js16397/HPC/Test
+PBS job ID is 7803858.master.cm.cluster
+This jobs runs on the following machines:
+node31-030
+I am here 1
+I am here 2
+Hello, world; from host node31-030: process 0 of 4
+Hello, world; from host node31-030: process 3 of 4
+Hello, world; from host node31-030: process 1 of 4
+Hello, world; from host node31-030: process 2 of 4
+I am here 3

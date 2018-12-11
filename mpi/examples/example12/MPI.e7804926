@@ -1,0 +1,53 @@
+Error: size assumed to be at least NDIMS * NDIMS, i.e. 4.
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+Error: size assumed to be at least NDIMS * NDIMS, i.e. 4.
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+Error: size assumed to be at least NDIMS * NDIMS, i.e. 4.
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+Error: size assumed to be at least NDIMS * NDIMS, i.e. 4.
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+Error: size assumed to be at least NDIMS * NDIMS, i.e. 4.
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+Error: size assumed to be at least NDIMS * NDIMS, i.e. 4.
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+Error: size assumed to be at least NDIMS * NDIMS, i.e. 4.
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+Error: size assumed to be at least NDIMS * NDIMS, i.e. 4.
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+Error: size assumed to be at least NDIMS * NDIMS, i.e. 4.
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+Error: size assumed to be at least NDIMS * NDIMS, i.e. 4.
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+Error: size assumed to be at least NDIMS * NDIMS, i.e. 4.
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+Error: size assumed to be at least NDIMS * NDIMS, i.e. 4.
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+Error: size assumed to be at least NDIMS * NDIMS, i.e. 4.
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+Error: size assumed to be at least NDIMS * NDIMS, i.e. 4.
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+Error: size assumed to be at least NDIMS * NDIMS, i.e. 4.
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+Error: size assumed to be at least NDIMS * NDIMS, i.e. 4.
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+Error: size assumed to be at least NDIMS * NDIMS, i.e. 4.
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+Error: size assumed to be at least NDIMS * NDIMS, i.e. 4.
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+Error: size assumed to be at least NDIMS * NDIMS, i.e. 4.
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+Error: size assumed to be at least NDIMS * NDIMS, i.e. 4.
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+Error: size assumed to be at least NDIMS * NDIMS, i.e. 4.
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+Error: size assumed to be at least NDIMS * NDIMS, i.e. 4.
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+Error: size assumed to be at least NDIMS * NDIMS, i.e. 4.
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+Error: size assumed to be at least NDIMS * NDIMS, i.e. 4.
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+--------------------------------------------------------------------------
+mpiexec noticed that the job aborted, but has no info as to the process
+that caused that situation.
+--------------------------------------------------------------------------
+Warning: Permanently added 'node31-038,10.131.0.230' (RSA) to the list of known hosts.

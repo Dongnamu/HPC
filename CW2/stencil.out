@@ -1,0 +1,47 @@
+Running on host node46-017
+Time is Tue Dec 11 20:28:52 GMT 2018
+Directory is /panfs/panasas01/cosc/js16397/HPC/CW2
+PBS job ID is 7819224.master.cm.cluster
+This jobs runs on the following machines:
+node46-017
+ranks spread over a grid of 2 dimension(s): [2,2]
+rank 2 has coordinates (1,0)
+rank: 2
+	north=3
+	south=3
+	east=0
+	west=0
+Rank: 2, rows: 512, colmns 512
+rank 3 has coordinates (1,1)
+rank: 3
+	north=2
+	south=2
+	east=1
+	west=1
+Rank: 3, rows: 512, colmns 512
+rank 0 has coordinates (0,0)
+rank: 0
+	north=1
+	south=1
+	east=2
+	west=2
+Rank: 0, rows: 512, colmns 512
+rank 1 has coordinates (0,1)
+rank: 1
+	north=0
+	south=0
+	east=3
+	west=3
+Rank: 1, rows: 512, colmns 512
+------------------------------------
+ runtime: 0.025199 s
+------------------------------------
+------------------------------------
+ runtime: 0.025367 s
+------------------------------------
+------------------------------------
+ runtime: 0.121819 s
+------------------------------------
+------------------------------------
+ runtime: 0.136958 s
+------------------------------------

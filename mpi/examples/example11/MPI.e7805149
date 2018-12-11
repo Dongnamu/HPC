@@ -1,0 +1,3 @@
+=>> PBS: job killed: walltime 321 exceeded limit 300
+mpirun: killing job...
+

@@ -1,0 +1,18 @@
+Running on host node31-029
+Time is Sun Dec 9 17:29:35 GMT 2018
+Directory is /panfs/panasas01/cosc/js16397/HPC/mpi/examples/example2
+PBS job ID is 7798151.master.cm.cluster
+This jobs runs on the following machines:
+node31-029
+length   time/message (usec)    transfer rate (Gbyte/sec)
+1	      0.910044               0.004395
+1001	      1.442075               2.776555
+2001	      2.102494               3.806907
+3001	      2.596498               4.623151
+4001	      3.003478               5.328489
+5001	      3.610015               5.541251
+6001	      4.022479               5.967464
+7001	      4.503965               6.217632
+8001	      6.016970               5.318957
+9001	      8.327484               4.323515
+10001	      8.877039               4.506458

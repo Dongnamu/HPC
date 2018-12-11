@@ -1,0 +1,16 @@
+Error: size assumed to be at least NDIMS * NDIMS, i.e. 4.
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+Error: size assumed to be at least NDIMS * NDIMS, i.e. 4.
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+Error: size assumed to be at least NDIMS * NDIMS, i.e. 4.
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+Error: size assumed to be at least NDIMS * NDIMS, i.e. 4.
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+Error: size assumed to be at least NDIMS * NDIMS, i.e. 4.
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+Error: size assumed to be at least NDIMS * NDIMS, i.e. 4.
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+--------------------------------------------------------------------------
+mpiexec noticed that the job aborted, but has no info as to the process
+that caused that situation.
+--------------------------------------------------------------------------
