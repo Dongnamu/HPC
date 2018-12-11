@@ -126,6 +126,8 @@ int main(int argc, char *argv[]) {
   local_nrows = calc_nrows_from_rank(rank, size, nx);
   local_ncols = calc_ncols_from_rank(rank, size, ny);
 
+  print("Rank: %d, rows: %d, colmns %d\n", rank, local_nrows, local_nrows);
+
   float * restrict image0 = malloc(sizeof(float) * local_nrows * local_ncols);
   float * restrict tmp_image0 = malloc(sizeof(float) * local_nrows * local_ncols);
 
@@ -143,8 +145,8 @@ int main(int argc, char *argv[]) {
 
   if (rank == MASTER) {
     for (int t = 0; t < niters; t++) {
-      stencil(local_nrows, local_ncols, image0, tmp_image0);
-      stencil(local_nrows, local_ncols, tmp_image0, image0);
+      bottom_left_corner(local_nrows, local_ncols, image0, tmp_image0);
+      bottom_left_corner(local_nrows, local_ncols, tmp_image0, image0);
     }
   }
 
