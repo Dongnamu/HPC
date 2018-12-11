@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
 
 
   if (rank == MASTER){
-    output_image(OUTPUT_FILE, nx, ny, image0);
+    output_image(OUTPUT_FILE, local_nrows, local_ncols, image0);
   }
 
   free(image0);
@@ -533,6 +533,7 @@ void output_image(const char * file_name, const int nx, const int ny, float * re
         maximum = image[j+i*ny];
     }
   }
+  printf("I'm opened\n");
 
   // Output image, converting to numbers 0-255
   for (int j = 0; j < ny; ++j) {
@@ -541,7 +542,6 @@ void output_image(const char * file_name, const int nx, const int ny, float * re
     }
   }
 
-  printf("I'm opened\n");
   // Close the file
   fclose(fp);
 
