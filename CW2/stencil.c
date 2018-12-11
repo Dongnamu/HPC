@@ -151,13 +151,13 @@ int main(int argc, char *argv[]) {
 
   if (rank == MASTER) {
 
-    for (int j = 0; j < local_ncols, j++) {
+    for (int j = 0; j < local_ncols; j++) {
       sendbuf[j] = image[j];
     }
 
     MPI_Sendrecv(sendbuf, local_nrows, MPI_DOUBLE, north, tag, recvbuf, local_nrows, MPI_DOUBLE, north, tag, MPI_COMM_WORLD, &status);
 
-    for (int j = 0; j < local_ncols, j++) {
+    for (int j = 0; j < local_ncols; j++) {
       image_pad[j] = recvbuf[j];
     }
 
@@ -175,13 +175,13 @@ int main(int argc, char *argv[]) {
   } else {
     if (rank == 1) {
 
-      for (int j = 0; j < local_ncols, j++) {
+      for (int j = 0; j < local_ncols; j++) {
         sendbuf[j] = image[j + (local_nrows - 1) * local_ncols];
       }
 
       MPI_Sendrecv(sendbuf, local_nrows, MPI_DOUBLE, south, tag, recvbuf, local_nrows, MPI_DOUBLE, south, tag, MPI_COMM_WORLD, &status);
 
-      for (int j = 0; j < local_ncols, j++) {
+      for (int j = 0; j < local_ncols; j++) {
         image_pad[j + local_nrows * local_ncols] = recvbuf[j];
       }
 
