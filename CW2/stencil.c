@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
   local_nrows = calc_nrows_from_rank(rank, size, nx);
   local_ncols = calc_ncols_from_rank(rank, size, ny);
 
-  printf("Rank: %d, rows: %d, colmns %d\n", rank, local_nrows, local_nrows);
+  printf("Rank: %d, rows: %d, colmns %d\n", rank, local_nrows, local_ncols);
 
   float * restrict image0 = malloc(sizeof(float) * local_nrows * local_ncols);
   float * restrict tmp_image0 = malloc(sizeof(float) * local_nrows * local_ncols);
