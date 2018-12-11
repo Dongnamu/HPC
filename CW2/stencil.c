@@ -143,8 +143,8 @@ int main(int argc, char *argv[]) {
 
   if (rank == MASTER) {
     for (int t = 0; t < niters; t++) {
-      bottom_left_corner(local_nrows, local_ncols, image0, tmp_image0);
-      bottom_left_corner(local_nrows, local_ncols, tmp_image0, image0);
+      stencil(local_nrows, local_ncols, image0, tmp_image0);
+      stencil(local_nrows, local_ncols, tmp_image0, image0);
     }
   }
 
