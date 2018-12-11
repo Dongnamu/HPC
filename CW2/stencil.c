@@ -63,6 +63,8 @@ int main(int argc, char *argv[]) {
 
   int local_nrows;
   int local_ncols;
+  int local_usual_ncols;
+  int local_usual_nrows;
   int remote_ncols;
   // initialise our MPI environment
   MPI_Init( &argc, &argv);
