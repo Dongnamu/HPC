@@ -197,8 +197,8 @@ int main(int argc, char *argv[]) {
 
     for (int i = 1; i < local_nrows + 1; i++) {
       for (int j = 0; j < local_ncols; j++) {
-        image_pad[j + i * local_ncols] = image[j + (i - 1) * local_ncols];
-        tmp_image_pad[j + i * local_ncols] = image[j + (i - 1) * local_ncols];
+        image_pad[j + i * (local_ncols + 1)] = image[j + (i - 1) * local_ncols];
+        tmp_image_pad[j + i * (local_ncols + 1)] = image[j + (i - 1) * local_ncols];
       }
     }
 
@@ -225,8 +225,8 @@ int main(int argc, char *argv[]) {
 
       for (int i = 0; i < local_nrows; i++) {
         for (int j = 0; j < local_ncols; j++) {
-          image_pad[j + i * local_ncols] = image[j + i * local_ncols];
-          tmp_image_pad[j + i * local_ncols] = image[j + i * local_ncols];
+          image_pad[j + i * (local_ncols + 1)] = image[j + i * local_ncols];
+          tmp_image_pad[j + i * (local_ncols + 1)] = image[j + i * local_ncols];
         }
       }
 
