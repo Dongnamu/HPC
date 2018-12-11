@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
   }
 
   if (rank == 0) {
-    output_image("RANK1.pgm", local_nrows, local_ncols, image);
+    output_image("RANK0.pgm", local_nrows, local_ncols, image);
   }
   if (rank == 1) {
     output_image("RANK1.pgm", local_nrows, local_ncols, image);
