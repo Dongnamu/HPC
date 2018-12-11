@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
      printbuf must be big enough to hold this number */
   remote_ncols = calc_ncols_from_rank(size-1, size, ny);
 
-  init_image(local_nrows, local_ncols, image0, tmp_image0);
+  init_image(local_nrows, local_ncols, image, tmp_image);
 
   double tic = wtime();
 
