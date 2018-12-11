@@ -181,8 +181,8 @@ int main(int argc, char *argv[]) {
     output_image(OUTPUT_FILE, nx, ny, image0);
   }
 
-  printf("I'm here\n");
   free(image0);
+  printf("I'm here\n");
 
   MPI_Finalize();
 
