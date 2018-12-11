@@ -186,15 +186,14 @@ int main(int argc, char *argv[]) {
   if (rank == MASTER) {
 
     for (int j = 0; j < local_ncols; j++) {
-      sendbuf[j] = image[(local_nrows - 1) + j * local_nrows];
+      sendbuf[j] = image[j];
     }
 
     MPI_Sendrecv(sendbuf, local_nrows, MPI_DOUBLE, north, tag, recvbuf, local_nrows, MPI_DOUBLE, north, tag, MPI_COMM_WORLD, &status);
 
     for (int j = 0; j < local_ncols; j++) {
-      image_pad[local_nrows + j * (local_nrows + 1)] = recvbuf[j];
+      image_pad[j] = recvbuf[j];
     }
-
 
     for (int i = 1; i < local_nrows + 1; i++) {
       for (int j = 0; j < local_ncols; j++) {
@@ -211,13 +210,13 @@ int main(int argc, char *argv[]) {
     if (rank == 1) {
 
       for (int j = 0; j < local_ncols; j++) {
-        sendbuf[j] = image[j * local_nrows];
+        sendbuf[j] = image[j + (local_nrows - 1) * local_ncols];
       }
 
       MPI_Sendrecv(sendbuf, local_nrows, MPI_DOUBLE, south, tag, recvbuf, local_nrows, MPI_DOUBLE, south, tag, MPI_COMM_WORLD, &status);
 
       for (int j = 0; j < local_ncols; j++) {
-        image_pad[j * (local_nrows + 1)] = recvbuf[j];
+        image_pad[j + local_nrows * local_ncols] = recvbuf[j];
       }
 
       for (int i = 0; i < local_nrows; i++) {
@@ -232,7 +231,6 @@ int main(int argc, char *argv[]) {
         top_right_corner(local_nrows, local_ncols, tmp_image_pad, image_pad);
       }
     } else {
-
       if (rank == bottom_left) {
 
         for (int i = 0; i < local_nrows; i++) {
@@ -443,7 +441,7 @@ void right(const int nx, const int ny, float * restrict image, float * restrict 
 
   // when i = nx - 1, 0 < j < ny - 1
 
-  for (int j = 1; j < ny - 1; j++) {
+  for (j = 1; j < ny - 1; j++) {
     numberToadd = image[j+(nx-1)*ny] * initialMul;
     numberToadd += image[j+(nx-2)*ny] * Mul;
     numberToadd += image[j-1+(nx-1)*ny] * Mul;
