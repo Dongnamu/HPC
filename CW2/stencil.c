@@ -603,11 +603,13 @@ void output_image(const char * file_name, const int nx, const int ny, float * re
 int calc_nrows_from_rank(int rank, int size, int rows) {
   int nrows;
 
-  nrows = rows / 2;
+  int nsize = size * 0.5;
+
+  nrows = rows / nsize;
 
   if ((nrows % 2) != 0) {
-    if (rank == size - 1)
-      nrows += rows % size;
+    if (rank == (size - 2) || rank == (size - 1))
+      nrows += rows % nsize;
   }
 
   return nrows;
@@ -617,9 +619,7 @@ int calc_ncols_from_rank(int rank, int size, int cols)
 {
   int ncols;
 
-  int nsize;
-
-  nsize = size * 0.5;
+  int nsize = 2
 
   ncols = cols / nsize;       /* integer division */
   if (cols % nsize != 0) {  /* if there is a remainder */
