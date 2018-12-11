@@ -697,7 +697,7 @@ int calc_ncols_from_rank(int rank, int size, int cols)
   nsize = size * 0.5;
 
   ncols = cols / nsize;       /* integer division */
-  if ((cols % nsize != 0) {  /* if there is a remainder */
+  if (cols % nsize != 0) {  /* if there is a remainder */
     if ((rank == bottom_right) || (rank == bottom_left)) {
       ncols += cols % nsize;  /* add remainder to last rank */
     }
