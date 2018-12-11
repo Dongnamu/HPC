@@ -60,6 +60,8 @@ int main(int argc, char *argv[]) {
   // initialise our MPI environment
   MPI_Init( &argc, &argv);
 
+  printf("I'm here 0\n");
+
 
   // check wheter the initialisation was successful
 
