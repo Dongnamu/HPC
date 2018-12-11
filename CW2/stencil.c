@@ -202,7 +202,8 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    output_image("RANK0.pgm", local_nrows, local_ncols, image_pad);
+    output_image("Rank0 Original.pgm", local_nrows, local_ncols, image);
+    output_image("RANK0 Pad.pgm", local_nrows, local_ncols, image_pad);
 
     for (int t = 0; t < niters; t++) {
       top_left_corner(local_nrows, local_ncols, image_pad, tmp_image_pad);
@@ -224,11 +225,12 @@ int main(int argc, char *argv[]) {
       for (int j = 1; j < local_ncols; j++) {
         for (int i = 0; i < local_nrows; i++) {
           image_pad[i + j * (local_nrows + 1)] = image[i + (j - 1) * local_nrows];
-          tmp_image_pad[i + j * local_ncols] = image[i + (j - 1) * local_nrows];
+          tmp_image_pad[i + j * (local_nrows + 1)] = image[i + (j - 1) * local_nrows];
         }
       }
 
-      output_image("RANK1.pgm", local_nrows, local_ncols, image_pad);
+      output_image("RANK1 Original.pgm", local_nrows, local_ncols, image);
+      output_image("RANK1 Pad.pgm", local_nrows, local_ncols, image_pad);
 
       for (int t = 0; t < niters; t++) {
         top_right_corner(local_nrows, local_ncols, image_pad, tmp_image_pad);
