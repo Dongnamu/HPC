@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
   int coords[N_DIMENSION];     /* array to hold the grid coordinates for a rank */
   MPI_Comm comm_cart;    /* a cartesian topology aware communicator */
 
-  int top_right;
+  int bottom_left;
   int bottom_right;
 
 
@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
   MPI_Barrier(MPI_COMM_WORLD);
   printf("rank: %d\n\tnorth=%d\n\tsouth=%d\n\teast=%d\n\twest=%d\n", rank,north,south,east,west);
 
-  top_right = size - 2;
+  bottom_left = size - 2;
   bottom_right = size - 1;
 
 
@@ -203,8 +203,8 @@ int main(int argc, char *argv[]) {
     }
 
     for (int t = 0; t < niters; t++) {
-      bottom_left_corner(local_nrows, local_ncols, image_pad, tmp_image_pad);
-      bottom_left_corner(local_nrows, local_ncols, tmp_image_pad, image_pad);
+      top_left_corner(local_nrows, local_ncols, image_pad, tmp_image_pad);
+      top_left_corner(local_nrows, local_ncols, tmp_image_pad, image_pad);
     }
   } else {
     if (rank == 1) {
@@ -227,11 +227,11 @@ int main(int argc, char *argv[]) {
       }
 
       for (int t = 0; t < niters; t++) {
-        top_left_corner(local_nrows, local_ncols, image_pad, tmp_image_pad);
-        top_left_corner(local_nrows, local_ncols, tmp_image_pad, image_pad);
+        top_right_corner(local_nrows, local_ncols, image_pad, tmp_image_pad);
+        top_right_corner(local_nrows, local_ncols, tmp_image_pad, image_pad);
       }
     } else {
-      if (rank == top_right) {
+      if (rank == bottom_left) {
 
         for (int i = 0; i < local_nrows; i++) {
           for (int j = 1; j < local_ncols + 1; j++) {
@@ -242,8 +242,8 @@ int main(int argc, char *argv[]) {
 
 
         for (int t = 0; t < niters; t++) {
-          top_right_corner(local_nrows, local_ncols, image_pad, tmp_image_pad);
-          top_right_corner(local_nrows, local_ncols, tmp_image_pad, image_pad);
+          bottom_left_corner(local_nrows, local_ncols, image_pad, tmp_image_pad);
+          bottom_left_corner(local_nrows, local_ncols, tmp_image_pad, image_pad);
         }
       } else {
         if (rank == bottom_right) {
@@ -303,8 +303,8 @@ int main(int argc, char *argv[]) {
   printf("------------------------------------\n");
 
 
-  if (rank == MASTER){
-    output_image("RANK0.pgm", local_nrows, local_ncols, image_pad);
+  if (rank == bottom_left){
+    output_image("RANK4.pgm", local_nrows, local_ncols, image_pad);
   }
 
   free(image);
@@ -406,17 +406,17 @@ void bottom_left_corner(const int nx, const int ny, float * restrict image, floa
 
 }
 
-void top(const int nx, const int ny, float * restrict image, float * restrict tmp_image) {
+void left(const int nx, const int ny, float * restrict image, float * restrict tmp_image) {
   float initialMul = 0.6f;
   float Mul = 0.1f;
   float numberToadd = 0.0f;
 
-  for (int j = 1; j < ny - 1; j++) {
-    numberToadd = image[j] * initialMul;
-    numberToadd += image[j + ny] * Mul;
-    numberToadd += image[j-1] * Mul;
-    numberToadd += image[j+1] * Mul;
-    tmp_image[j] = numberToadd;
+  for (int i = 1; i < nx - 1; i++) {
+  	numberToadd = image[i * ny] * initialMul;
+  	numberToadd += image[(i-1) * ny] * Mul;
+  	numberToadd += image[(i+1) * ny] * Mul;
+  	numberToadd += image[1 + i * ny] * Mul;
+  	tmp_image[i * ny] = numberToadd;
   }
 
   for (int i = 1; i < nx - 1; i++) {
@@ -432,17 +432,17 @@ void top(const int nx, const int ny, float * restrict image, float * restrict tm
   }
 }
 
-void bottom(const int nx, const int ny, float * restrict image, float * restrict tmp_image) {
+void right(const int nx, const int ny, float * restrict image, float * restrict tmp_image) {
   float initialMul = 0.6f;
   float Mul = 0.1f;
   float numberToadd = 0.0f;
 
-  for (int j = 1; j < ny - 1; j++) {
-    numberToadd = image[j+(nx-1)*ny] * initialMul;
-  	numberToadd += image[j+(nx-2)*ny] * Mul;
-  	numberToadd += image[j-1+(nx-1)*ny] * Mul;
-  	numberToadd += image[j+1+(nx-1)*ny] * Mul;
-  	tmp_image[j+(nx-1)*ny] = numberToadd;
+  for (int i = 1; i < nx - 1; i++) {
+    numberToadd = image[(ny - 1) + i * ny] * initialMul;
+  	numberToadd += image[(ny - 1) + (i - 1) * ny] * Mul;
+  	numberToadd += image[(ny - 1) + (i + 1) * ny] * Mul;
+  	numberToadd += image[(ny - 2) + i * ny] * Mul;
+  	tmp_image[(ny - 1) + i * ny] = numberToadd;
   }
 
   for (int i = 1; i < nx - 1; i++) {
