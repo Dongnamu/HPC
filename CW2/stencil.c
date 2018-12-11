@@ -34,6 +34,7 @@ int main(int argc, char *argv[]) {
   int source;
   double *sendbuf;       /* buffer to hold values to send */
   double *recvbuf;       /* buffer to hold received values */
+  double *printbuf;
   int tag = 0;
   MPI_Status status;
 
@@ -146,6 +147,8 @@ int main(int argc, char *argv[]) {
       bottom_left_corner(local_nrows, local_ncols, tmp_image0, image0);
     }
   }
+
+  double toc = wtime();
 
 
   // Allocate the image
