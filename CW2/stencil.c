@@ -167,10 +167,10 @@ int main(int argc, char *argv[]) {
     tmp_image_pad = (float*)malloc(sizeof(float) * (local_nrows + 1) * (local_ncols + 2));
   }
 
-  for (int i = loop_row_start_point; i < loop_row_end_point; i++) {
-    for (int j = loop_col_start_point; j < loop_col_end_point;  j++) {
-      image[(j - loop_col_start_point) + (i - loop_row_start_point) * local_nrows] = image_original[j + i * ny];
-      tmp_image[(j - loop_col_start_point) + (i - loop_row_start_point) * local_nrows] = tmp_image_original[j + i * ny];
+  for (int j = loop_col_start_point; j < loop_col_end_point;  j++) {
+    for (int i = loop_row_start_point; i < loop_row_end_point; i++) {
+      image[(i - loop_row_start_point) + (j - loop_col_start_point) * local_ncols] = image_original[i + j * ny];
+      tmp_image[(i - loop_row_start_point) + (j - loop_col_start_point) * local_ncols] = tmp_image_original[i + j * ny];
     }
   }
 
@@ -180,7 +180,7 @@ int main(int argc, char *argv[]) {
   if (rank == 1) {
     output_image("RANK1.pgm", local_nrows, local_ncols, image);
   }
-  
+
 
 
   sendbuf = (double*)malloc(sizeof(double) * local_nrows);
