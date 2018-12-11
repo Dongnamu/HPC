@@ -141,8 +141,8 @@ int main(int argc, char *argv[]) {
 
   init_image(nx, ny, image_original, tmp_image_original);
 
-  local_usual_ncols = ny / (size * 0.5);
-  local_usual_nrows = nx / 2;
+  local_usual_ncols = ny / 2;
+  local_usual_nrows = nx / (size * 0.5);
 
   if ((rank % 2) == 1) {
     loop_row_start_point = 0;
