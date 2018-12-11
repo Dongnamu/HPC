@@ -262,17 +262,17 @@ void bottom_left_corner(const int nx, const int ny, float * restrict image, floa
     tmp_image[j+(nx-1)*ny] = numberToadd;
   }
 
-  for (int i = 1; i < nx - 1; i++) {
-    for (int j = 1; j < ny - 1; j++) {
-      tmp_image[j+i*ny] = image[j+i*ny] * initialMul;
-      tmp_image[j+i*ny] += image[j  +(i-1)*ny] * Mul;
-      tmp_image[j+i*ny] += image[j  +(i+1)*ny] * Mul;
-      tmp_image[j+i*ny] += image[j-1+i*ny] * Mul;
-      tmp_image[j+i*ny] += image[j+1+i*ny] * Mul;
-
-      // tmp_image[j+i*ny] = numberToadd;
-    }
-  }
+  // for (int i = 1; i < nx - 1; i++) {
+  //   for (int j = 1; j < ny - 1; j++) {
+  //     tmp_image[j+i*ny] = image[j+i*ny] * initialMul;
+  //     tmp_image[j+i*ny] += image[j  +(i-1)*ny] * Mul;
+  //     tmp_image[j+i*ny] += image[j  +(i+1)*ny] * Mul;
+  //     tmp_image[j+i*ny] += image[j-1+i*ny] * Mul;
+  //     tmp_image[j+i*ny] += image[j+1+i*ny] * Mul;
+  //
+  //     // tmp_image[j+i*ny] = numberToadd;
+  //   }
+  // }
 
 }
 
@@ -289,17 +289,17 @@ void top(const int nx, const int ny, float * restrict image, float * restrict tm
     tmp_image[j] = numberToadd;
   }
 
-  // for (int i = 1; i < nx - 1; i++) {
-  //   for (int j = 1; j < ny - 1; j++) {
-  //     tmp_image[j+i*ny] = image[j+i*ny] * initialMul;
-  //     tmp_image[j+i*ny] += image[j  +(i-1)*ny] * Mul;
-  //     tmp_image[j+i*ny] += image[j  +(i+1)*ny] * Mul;
-  //     tmp_image[j+i*ny] += image[j-1+i*ny] * Mul;
-  //     tmp_image[j+i*ny] += image[j+1+i*ny] * Mul;
-  //
-  //     // tmp_image[j+i*ny] = numberToadd;
-  //   }
-  // }
+  for (int i = 1; i < nx - 1; i++) {
+    for (int j = 1; j < ny - 1; j++) {
+      tmp_image[j+i*ny] = image[j+i*ny] * initialMul;
+      tmp_image[j+i*ny] += image[j  +(i-1)*ny] * Mul;
+      tmp_image[j+i*ny] += image[j  +(i+1)*ny] * Mul;
+      tmp_image[j+i*ny] += image[j-1+i*ny] * Mul;
+      tmp_image[j+i*ny] += image[j+1+i*ny] * Mul;
+
+      // tmp_image[j+i*ny] = numberToadd;
+    }
+  }
 }
 
 void bottom(const int nx, const int ny, float * restrict image, float * restrict tmp_image) {
