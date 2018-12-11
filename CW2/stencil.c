@@ -619,7 +619,7 @@ int calc_ncols_from_rank(int rank, int size, int cols)
 {
   int ncols;
 
-  int nsize = 2
+  int nsize = 2;
 
   ncols = cols / nsize;       /* integer division */
   if (cols % nsize != 0) {  /* if there is a remainder */
