@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
   int ny = atoi(argv[2]);
   int niters = atoi(argv[3]);
 
-  local_nrows = nx;
+  local_nrows = nx / 2;
   local_ncols = calc_ncols_from_rank(rank, size, ny);
 
   float * restrict image0 = malloc(sizeof(float) * local_nrows * local_ncols);
