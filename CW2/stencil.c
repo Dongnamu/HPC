@@ -186,14 +186,15 @@ int main(int argc, char *argv[]) {
   if (rank == MASTER) {
 
     for (int j = 0; j < local_ncols; j++) {
-      sendbuf[j] = image[j];
+      sendbuf[j] = image[(local_nrows - 1) + j * local_nrows];
     }
 
     MPI_Sendrecv(sendbuf, local_nrows, MPI_DOUBLE, north, tag, recvbuf, local_nrows, MPI_DOUBLE, north, tag, MPI_COMM_WORLD, &status);
 
-    for (int j = 0; j < local_ncols; j++) {
-      image_pad[j] = recvbuf[j];
+    for (int j = 0; i < local_ncols; j++) {
+      image_pad[local_nrows + j * (local_nrows + 1)] = recvbuf[j];
     }
+
 
     for (int i = 1; i < local_nrows + 1; i++) {
       for (int j = 0; j < local_ncols; j++) {
@@ -210,13 +211,13 @@ int main(int argc, char *argv[]) {
     if (rank == 1) {
 
       for (int j = 0; j < local_ncols; j++) {
-        sendbuf[j] = image[j + (local_nrows - 1) * local_ncols];
+        sendbuf[j] = image[j * local_nrows];
       }
 
       MPI_Sendrecv(sendbuf, local_nrows, MPI_DOUBLE, south, tag, recvbuf, local_nrows, MPI_DOUBLE, south, tag, MPI_COMM_WORLD, &status);
 
       for (int j = 0; j < local_ncols; j++) {
-        image_pad[j + local_nrows * local_ncols] = recvbuf[j];
+        image_pad[j * (local_nrows + 1)] = recvbuf[j];
       }
 
       for (int i = 0; i < local_nrows; i++) {
@@ -231,6 +232,7 @@ int main(int argc, char *argv[]) {
         top_right_corner(local_nrows, local_ncols, tmp_image_pad, image_pad);
       }
     } else {
+
       if (rank == bottom_left) {
 
         for (int i = 0; i < local_nrows; i++) {
@@ -369,27 +371,28 @@ void bottom_left_corner(const int nx, const int ny, float * restrict image, floa
   float Mul = 0.1f;
   float numberToadd = 0.0f;
 
-  // when i = nx - 1, j = 0
-  numberToadd = image[(nx - 1) * ny] * initialMul;
-  numberToadd += image[(ny - 2) * ny] * Mul;
-  numberToadd += image[1 + (nx - 1) * ny] * Mul;
-  tmp_image[(ny - 1) * ny] = numberToadd;
+  // when i = 0, j = ny - 1
+  numberToadd = image[(ny - 1)] * initialMul;
+  numberToadd += image[(ny - 1) + ny] * Mul;
+  numberToadd += image[(ny - 2)] * Mul;
+  tmp_image[(ny - 1)] = numberToadd;
 
-  // when 0 < i < nx -1, j = 0
-  for (int i = 1; i < nx - 1; i++) {
-    numberToadd = image[i * ny] * initialMul;
-    numberToadd += image[(i-1) * ny] * Mul;
-    numberToadd += image[(i+1) * ny] * Mul;
-    numberToadd += image[1 + i * ny] * Mul;
-    tmp_image[i * ny] = numberToadd;
+  // when i = 0, 0 < j < ny - 1
+  for (int j = 1; j < ny - 1; j++) {
+  	numberToadd = image[j] * initialMul;
+  	numberToadd += image[j + ny] * Mul;
+  	numberToadd += image[j-1] * Mul;
+  	numberToadd += image[j+1] * Mul;
+  	tmp_image[j] = numberToadd;
   }
 
-  for (int j = 1; j < ny - 1; j++) {
-    numberToadd = image[j+(nx-1)*ny] * initialMul;
-    numberToadd += image[j+(nx-2)*ny] * Mul;
-    numberToadd += image[j-1+(nx-1)*ny] * Mul;
-    numberToadd += image[j+1+(nx-1)*ny] * Mul;
-    tmp_image[j+(nx-1)*ny] = numberToadd;
+  // when 0 < i < nx - 1, j = ny - 1
+  for (int i = 1; i < nx - 1; i++) {
+    numberToadd = image[(ny - 1) + i * ny] * initialMul;
+  	numberToadd += image[(ny - 1) + (i - 1) * ny] * Mul;
+  	numberToadd += image[(ny - 1) + (i + 1) * ny] * Mul;
+  	numberToadd += image[(ny - 2) + i * ny] * Mul;
+  	tmp_image[(ny - 1) + i * ny] = numberToadd;
   }
 
   for (int i = 1; i < nx - 1; i++) {
@@ -411,12 +414,13 @@ void left(const int nx, const int ny, float * restrict image, float * restrict t
   float Mul = 0.1f;
   float numberToadd = 0.0f;
 
-  for (int i = 1; i < nx - 1; i++) {
-  	numberToadd = image[i * ny] * initialMul;
-  	numberToadd += image[(i-1) * ny] * Mul;
-  	numberToadd += image[(i+1) * ny] * Mul;
-  	numberToadd += image[1 + i * ny] * Mul;
-  	tmp_image[i * ny] = numberToadd;
+  // when i = 0, 0 < j < ny - 1
+  for (int j = 1; j < ny - 1; j++) {
+  	numberToadd = image[j] * initialMul;
+  	numberToadd += image[j + ny] * Mul;
+  	numberToadd += image[j-1] * Mul;
+  	numberToadd += image[j+1] * Mul;
+  	tmp_image[j] = numberToadd;
   }
 
   for (int i = 1; i < nx - 1; i++) {
@@ -437,12 +441,14 @@ void right(const int nx, const int ny, float * restrict image, float * restrict 
   float Mul = 0.1f;
   float numberToadd = 0.0f;
 
-  for (int i = 1; i < nx - 1; i++) {
-    numberToadd = image[(ny - 1) + i * ny] * initialMul;
-  	numberToadd += image[(ny - 1) + (i - 1) * ny] * Mul;
-  	numberToadd += image[(ny - 1) + (i + 1) * ny] * Mul;
-  	numberToadd += image[(ny - 2) + i * ny] * Mul;
-  	tmp_image[(ny - 1) + i * ny] = numberToadd;
+  // when i = nx - 1, 0 < j < ny - 1
+
+  for (j = 1; j < ny - 1; j++) {
+    numberToadd = image[j+(nx-1)*ny] * initialMul;
+    numberToadd += image[j+(nx-2)*ny] * Mul;
+    numberToadd += image[j-1+(nx-1)*ny] * Mul;
+    numberToadd += image[j+1+(nx-1)*ny] * Mul;
+    tmp_image[j+(nx-1)*ny] = numberToadd;
   }
 
   for (int i = 1; i < nx - 1; i++) {
@@ -470,20 +476,23 @@ void top_right_corner(const int nx, const int ny, float * restrict image, float 
   numberToadd += image[1 + (nx - 1) * ny] * Mul;
   tmp_image[(ny - 1) * ny] = numberToadd;
 
-  for (int j = 1; j < ny - 1; j++) {
-  	numberToadd = image[j] * initialMul;
-  	numberToadd += image[j + ny] * Mul;
-  	numberToadd += image[j-1] * Mul;
-  	numberToadd += image[j+1] * Mul;
-  	tmp_image[j] = numberToadd;
+  // when 0 < i < nx - 1, j = 0
+  for (int i = 1; i < nx - 1; i++) {
+    numberToadd = image[i * ny] * initialMul;
+    numberToadd += image[(i-1) * ny] * Mul;
+    numberToadd += image[(i+1) * ny] * Mul;
+    numberToadd += image[1 + i * ny] * Mul;
+    tmp_image[i * ny] = numberToadd;
   }
 
-  for (int i = 1; i < nx - 1; i++) {
-    numberToadd = image[(ny - 1) + i * ny] * initialMul;
-  	numberToadd += image[(ny - 1) + (i - 1) * ny] * Mul;
-  	numberToadd += image[(ny - 1) + (i + 1) * ny] * Mul;
-  	numberToadd += image[(ny - 2) + i * ny] * Mul;
-  	tmp_image[(ny - 1) + i * ny] = numberToadd;
+  // when i = nx - 1, 0 < j < ny - 1
+
+  for (int j = 1; j < ny - 1; j++) {
+    numberToadd = image[j+(nx-1)*ny] * initialMul;
+  	numberToadd += image[j+(nx-2)*ny] * Mul;
+  	numberToadd += image[j-1+(nx-1)*ny] * Mul;
+  	numberToadd += image[j+1+(nx-1)*ny] * Mul;
+  	tmp_image[j+(nx-1)*ny] = numberToadd;
   }
 
   for (int i = 1; i < nx - 1; i++) {
@@ -511,6 +520,7 @@ void bottom_right_corner(const int nx, const int ny, float * restrict image, flo
   numberToadd += image[(ny - 2) + (nx - 1) * ny] * Mul;
   tmp_image[(ny - 1) + (nx - 1) * ny] = numberToadd;
 
+  // when i = nx - 1, 0 < j < ny - 1
   for (int j = 1; j < ny - 1; j++) {
     numberToadd = image[j+(nx-1)*ny] * initialMul;
   	numberToadd += image[j+(nx-2)*ny] * Mul;
@@ -519,6 +529,7 @@ void bottom_right_corner(const int nx, const int ny, float * restrict image, flo
   	tmp_image[j+(nx-1)*ny] = numberToadd;
   }
 
+  // when 0 < i < nx - 1, j = ny - 1
   for (int i = 1; i < nx - 1; i++) {
     numberToadd = image[(ny - 1) + i * ny] * initialMul;
   	numberToadd += image[(ny - 1) + (i - 1) * ny] * Mul;
