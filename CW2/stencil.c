@@ -186,24 +186,25 @@ int main(int argc, char *argv[]) {
   if (rank == MASTER) {
 
     for (int j = 0; j < local_ncols; j++) {
-      sendbuf[j] = image[(local_ncols - 1) + j * local_nrows];
+      sendbuf[j] = image[j];
     }
 
-    MPI_Sendrecv(sendbuf, local_ncols, MPI_DOUBLE, north, tag, recvbuf, local_ncols, MPI_DOUBLE, north, tag, MPI_COMM_WORLD, &status);
+    MPI_Sendrecv(sendbuf, local_nrows, MPI_DOUBLE, north, tag, recvbuf, local_nrows, MPI_DOUBLE, north, tag, MPI_COMM_WORLD, &status);
 
     for (int j = 0; j < local_ncols; j++) {
-      image_pad[local_nrows + j * (local_nrows + 1)] = recvbuf[j];
+      image_pad[j] = recvbuf[j];
     }
 
-    for (int j = 0; j < local_ncols; j++) {
-      for (int i = 0; i < local_nrows; i++) {
-        image_pad[i + j * (local_nrows + 1)] = image[i + j * local_nrows];
-        tmp_image_pad[i + j * (local_nrows + 1)] = image[i + j * local_nrows];
+    for (int i = 1; i < local_nrows + 1; i++) {
+      for (int j = 0; j < local_ncols; j++) {
+        image_pad[j + i * local_ncols] = image[j + (i - 1) * local_ncols];
+        tmp_image_pad[j + i * local_ncols] = image[j + (i - 1) * local_ncols];
       }
     }
 
-    output_image("Rank0Original.pgm", local_nrows, local_ncols, image);
-    output_image("RANK0Pad.pgm", local_nrows + 1, local_ncols + 1, image_pad);
+    output_image("RANK0Original.jpg", local_nrows, local_ncols, image);
+    output_image("RANK0Pad.jpg", local_nrows + 1, local_ncols + 1, image_pad);
+
 
     for (int t = 0; t < niters; t++) {
       top_left_corner(local_nrows, local_ncols, image_pad, tmp_image_pad);
@@ -213,24 +214,24 @@ int main(int argc, char *argv[]) {
     if (rank == 1) {
 
       for (int j = 0; j < local_ncols; j++) {
-        sendbuf[j] = image[j * local_nrows];
+        sendbuf[j] = image[j + (local_nrows - 1) * local_ncols];
       }
 
-      MPI_Sendrecv(sendbuf, local_ncols, MPI_DOUBLE, south, tag, recvbuf, local_ncols, MPI_DOUBLE, south, tag, MPI_COMM_WORLD, &status);
+      MPI_Sendrecv(sendbuf, local_nrows, MPI_DOUBLE, south, tag, recvbuf, local_nrows, MPI_DOUBLE, south, tag, MPI_COMM_WORLD, &status);
 
       for (int j = 0; j < local_ncols; j++) {
-        image_pad[j * (local_nrows + 1)] = recvbuf[j];
+        image_pad[j + local_nrows * local_ncols] = recvbuf[j];
       }
 
-      for (int j = 0; j < local_ncols; j++) {
-        for (int i = 1; i < (local_nrows + 1); i++) {
-          image_pad[i + j * (local_nrows + 1)] = image[(i - 1) + j * local_nrows];
-          tmp_image_pad[i + j * (local_nrows + 1)] = image[(i - 1) + j * local_nrows];
+      for (int i = 0; i < local_nrows; i++) {
+        for (int j = 0; j < local_ncols; j++) {
+          image_pad[j + i * local_ncols] = image[j + i * local_ncols];
+          tmp_image_pad[j + i * local_ncols] = image[j + i * local_ncols];
         }
       }
 
-      output_image("RANK1Original.pgm", local_nrows, local_ncols, image);
-      output_image("RANK1Pad.pgm", local_nrows + 1, local_ncols + 1, image_pad);
+      output_image("RANK1Original.jpg", local_nrows, local_ncols, image);
+      output_image("RANK1Pad.jpg", local_nrows + 1, local_ncols + 1, image_pad);
 
       for (int t = 0; t < niters; t++) {
         top_right_corner(local_nrows, local_ncols, image_pad, tmp_image_pad);
@@ -309,12 +310,8 @@ int main(int argc, char *argv[]) {
   printf("------------------------------------\n");
 
 
-  // if (rank == 0){
-  //   output_image("RANK0.pgm", local_nrows, local_ncols, image_pad);
-  // }
-  //
-  // if (rank == 1) {
-  //   output_image("RANK1.pgm", local_nrows, local_ncols, image_pad);
+  // if (rank == 2){
+    // output_image("RANK2.pgm", local_nrows, local_ncols, image_pad);
   // }
 
   free(image);
