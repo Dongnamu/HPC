@@ -197,8 +197,8 @@ int main(int argc, char *argv[]) {
 
     for (int j = 0; j < local_ncols; j++) {
       for (int i = 0; i < local_nrows; i++) {
-        image_pad[i + j * local_nrows] = image[i + j * local_nrows];
-        tmp_image_pad[i + j * local_nrows] = image[i + j * local_nrows];
+        image_pad[i + j * (local_nrows + 1)] = image[i + j * local_nrows];
+        tmp_image_pad[i + j * (local_nrows + 1)] = image[i + j * local_nrows];
       }
     }
 
