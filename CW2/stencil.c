@@ -239,7 +239,7 @@ void bottom_left_corner(const int nx, const int ny, float * restrict image, floa
   float Mul = 0.1f;
   float numberToadd = 0.0f;
 
-  when i = nx - 1, j = 0
+  // when i = nx - 1, j = 0
   numberToadd = image[(nx - 1) * ny] * initialMul;
   numberToadd += image[(ny - 2) * ny] * Mul;
   numberToadd += image[1 + (nx - 1) * ny] * Mul;
