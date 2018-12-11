@@ -242,27 +242,27 @@ void bottom_left_corner(const int nx, const int ny, float * restrict image, floa
   float numberToadd = 0.0f;
 
   // when i = nx - 1, j = 0
-  numberToadd = image[(nx - 1) * ny] * initialMul;
-  numberToadd += image[(ny - 2) * ny] * Mul;
-  numberToadd += image[1 + (nx - 1) * ny] * Mul;
-  tmp_image[(ny - 1) * ny] = numberToadd;
-
-  // when 0 < i < nx -1, j = 0
-  for (int i = 1; i < nx - 1; i++) {
-    numberToadd = image[i * ny] * initialMul;
-    numberToadd += image[(i-1) * ny] * Mul;
-    numberToadd += image[(i+1) * ny] * Mul;
-    numberToadd += image[1 + i * ny] * Mul;
-    tmp_image[i * ny] = numberToadd;
-  }
-
-  for (int j = 1; j < ny - 1; j++) {
-    numberToadd = image[j+(nx-1)*ny] * initialMul;
-    numberToadd += image[j+(nx-2)*ny] * Mul;
-    numberToadd += image[j-1+(nx-1)*ny] * Mul;
-    numberToadd += image[j+1+(nx-1)*ny] * Mul;
-    tmp_image[j+(nx-1)*ny] = numberToadd;
-  }
+  // numberToadd = image[(nx - 1) * ny] * initialMul;
+  // numberToadd += image[(ny - 2) * ny] * Mul;
+  // numberToadd += image[1 + (nx - 1) * ny] * Mul;
+  // tmp_image[(ny - 1) * ny] = numberToadd;
+  //
+  // // when 0 < i < nx -1, j = 0
+  // for (int i = 1; i < nx - 1; i++) {
+  //   numberToadd = image[i * ny] * initialMul;
+  //   numberToadd += image[(i-1) * ny] * Mul;
+  //   numberToadd += image[(i+1) * ny] * Mul;
+  //   numberToadd += image[1 + i * ny] * Mul;
+  //   tmp_image[i * ny] = numberToadd;
+  // }
+  //
+  // for (int j = 1; j < ny - 1; j++) {
+  //   numberToadd = image[j+(nx-1)*ny] * initialMul;
+  //   numberToadd += image[j+(nx-2)*ny] * Mul;
+  //   numberToadd += image[j-1+(nx-1)*ny] * Mul;
+  //   numberToadd += image[j+1+(nx-1)*ny] * Mul;
+  //   tmp_image[j+(nx-1)*ny] = numberToadd;
+  // }
 
   // for (int i = 1; i < nx - 1; i++) {
   //   for (int j = 1; j < ny - 1; j++) {
