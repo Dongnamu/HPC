@@ -168,20 +168,11 @@ int main(int argc, char *argv[]) {
   }
 
   for (int i = loop_row_start_point; i < loop_row_end_point; i++) {
-    for (int j = loop_col_start_point; j < loop_col_end_point;  j++) {
-      image[(j - loop_col_start_point) + (i - loop_row_start_point) * local_nrows] = image_original[j + i * ny];
-      tmp_image[(j - loop_col_start_point) + (i - loop_row_start_point) * local_nrows] = tmp_image_original[j + i * ny];
+    for (int j = loop_col_start_point; j < loop_col_end_point; j++) {
+      image[(j - loop_col_start_point) + (i - loop_row_start_point) * local_ncols] = image_original[j + i * ny];
+      tmp_image[(j - loop_col_start_point) + (i - loop_row_start_point) * local_ncols] = tmp_image_original[j + i * ny];
     }
   }
-
-  if (rank == 0) {
-    output_image("RANK0.pgm", local_nrows, local_ncols, image);
-  }
-  if (rank == 1) {
-    output_image("RANK1.pgm", local_nrows, local_ncols, image);
-  }
-  
-
 
   sendbuf = (double*)malloc(sizeof(double) * local_nrows);
   recvbuf = (double*)malloc(sizeof(double) * local_nrows);
@@ -191,6 +182,106 @@ int main(int argc, char *argv[]) {
   remote_ncols = calc_ncols_from_rank(size-1, size, ny);
 
   double tic = wtime();
+
+  if (rank == MASTER) {
+
+    for (int j = 0; j < local_ncols; j++) {
+      sendbuf[j] = image[j];
+    }
+
+    MPI_Sendrecv(sendbuf, local_nrows, MPI_DOUBLE, north, tag, recvbuf, local_nrows, MPI_DOUBLE, north, tag, MPI_COMM_WORLD, &status);
+
+    for (int j = 0; j < local_ncols; j++) {
+      image_pad[j] = recvbuf[j];
+    }
+
+    for (int i = 1; i < local_nrows + 1; i++) {
+      for (int j = 0; j < local_ncols; j++) {
+        image_pad[j + i * (local_ncols + 1)] = image[j + (i - 1) * local_ncols];
+        tmp_image_pad[j + i * (local_ncols + 1)] = image[j + (i - 1) * local_ncols];
+      }
+    }
+
+    output_image("RANK0Original.pgm", local_nrows, local_ncols, image);
+    output_image("RANK0Pad.pgm", local_nrows + 1, local_ncols + 1, image_pad);
+
+
+    for (int t = 0; t < niters; t++) {
+      top_left_corner(local_nrows, local_ncols, image_pad, tmp_image_pad);
+      top_left_corner(local_nrows, local_ncols, tmp_image_pad, image_pad);
+    }
+  } else {
+    if (rank == 1) {
+
+      for (int j = 0; j < local_ncols; j++) {
+        sendbuf[j] = image[j + (local_nrows - 1) * local_ncols];
+      }
+
+      MPI_Sendrecv(sendbuf, local_nrows, MPI_DOUBLE, south, tag, recvbuf, local_nrows, MPI_DOUBLE, south, tag, MPI_COMM_WORLD, &status);
+
+      for (int j = 0; j < local_ncols; j++) {
+        image_pad[j + local_nrows * local_ncols] = recvbuf[j];
+      }
+
+      for (int i = 0; i < local_nrows; i++) {
+        for (int j = 0; j < local_ncols; j++) {
+          image_pad[j + i * (local_ncols + 1)] = image[j + i * local_ncols];
+          tmp_image_pad[j + i * (local_ncols + 1)] = image[j + i * local_ncols];
+        }
+      }
+
+      output_image("RANK1Original.pgm", local_nrows, local_ncols, image);
+      output_image("RANK1Pad.pgm", local_nrows + 1, local_ncols + 1, image_pad);
+
+      for (int t = 0; t < niters; t++) {
+        top_right_corner(local_nrows, local_ncols, image_pad, tmp_image_pad);
+        top_right_corner(local_nrows, local_ncols, tmp_image_pad, image_pad);
+      }
+    } else {
+      if (rank == bottom_left) {
+
+        for (int i = 0; i < local_nrows; i++) {
+          for (int j = 1; j < local_ncols + 1; j++) {
+            image_pad[j + i * local_ncols] = image[(j - 1) + i * local_ncols];
+            tmp_image_pad[j + i * local_ncols] = image[(j - 1) + i * local_ncols];
+          }
+        }
+
+
+        for (int t = 0; t < niters; t++) {
+          bottom_left_corner(local_nrows, local_ncols, image_pad, tmp_image_pad);
+          bottom_left_corner(local_nrows, local_ncols, tmp_image_pad, image_pad);
+        }
+      } else {
+        if (rank == bottom_right) {
+
+          for (int i = 1; i < local_nrows + 1; i++) {
+            for (int j = 1; j < local_ncols + 1; j++) {
+              image_pad[j + i * local_ncols] = image[j + (i - 1) * local_ncols];
+              tmp_image_pad[j + i * local_ncols] = image[j + (i - 1) * local_ncols];
+            }
+          }
+
+          for (int t = 0; t < niters; t++) {
+            bottom_right_corner(local_nrows, local_ncols, image_pad, tmp_image_pad);
+            bottom_right_corner(local_nrows, local_ncols, tmp_image_pad, image_pad);
+          }
+    //     } else {
+    //       if ((rank % 2) == 1) {
+    //         for (int t = 0; t < niters; t++) {
+    //           top(local_nrows, local_ncols, image_pad, tmp_image_pad);
+    //           top(local_nrows, local_ncols, tmp_image_pad, image_pad);
+    //         }
+    //       } else {
+    //         for (int t = 0; t < niters; t++) {
+    //           bottom(local_nrows, local_ncols, image_pad, tmp_image_pad);
+    //           bottom(local_nrows, local_ncols, tmp_image_pad, image_pad);
+    //         }
+    //       }
+        }
+      }
+    }
+  }
 
   double toc = wtime();
 
