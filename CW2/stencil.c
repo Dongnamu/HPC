@@ -202,8 +202,8 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    output_image("RANK0Original.jpg", local_nrows, local_ncols, image);
-    output_image("RANK0Pad.jpg", local_nrows + 1, local_ncols + 1, image_pad);
+    output_image("RANK0Original.pgm", local_nrows, local_ncols, image);
+    output_image("RANK0Pad.pgm", local_nrows + 1, local_ncols + 1, image_pad);
 
 
     for (int t = 0; t < niters; t++) {
