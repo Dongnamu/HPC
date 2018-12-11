@@ -180,6 +180,8 @@ int main(int argc, char *argv[]) {
   if (rank == MASTER){
     output_image(OUTPUT_FILE, nx, ny, image0);
   }
+
+  printf("I'm here\n");
   free(image0);
 
   MPI_Finalize();
