@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
   float * restrict image = malloc(sizeof(float) * local_nrows * local_ncols);
   float * restrict tmp_image = malloc(sizeof(float) * local_nrows * local_ncols);
 
-  if (rank == MASTER || rank == 1 || rank == top_right || rank == bottom_right) {
+  if (rank == MASTER || rank == 1 || rank == bottom_left || rank == bottom_right) {
     image_pad = (float*)malloc(sizeof(float) * (local_nrows + 1) * (local_ncols + 1));
     tmp_image_pad = (float*)malloc(sizeof(float) * (local_nrows + 1) * (local_ncols + 1));
   } else {
