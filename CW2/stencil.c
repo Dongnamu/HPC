@@ -144,7 +144,6 @@ int main(int argc, char *argv[]) {
   /* The last rank has the most columns apportioned.
      printbuf must be big enough to hold this number */
   remote_ncols = calc_ncols_from_rank(size-1, size, ny);
-  printbuf = (double*)malloc(sizeof(double) * (remote_ncols + 2));
 
   init_image(local_nrows, local_ncols, image0, tmp_image0);
 
