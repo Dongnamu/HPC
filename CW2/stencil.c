@@ -21,6 +21,7 @@ void bottom_right_corner(const int nx, const int ny, float * restrict image, flo
 void stencil(const int nx, const int ny, float * restrict image, float * restrict tmp_image);
 void init_image(const int nx, const int ny, float * restrict image, float * restrict tmp_image);
 void output_image(const char * file_name, const int nx, const int ny, float * restrict image);
+int calc_nrows_from_rank(int rank, int size, int rows);
 int calc_ncols_from_rank(int rank, int size, int cols);
 double wtime(void);
 
