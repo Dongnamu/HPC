@@ -230,8 +230,8 @@ int main(int argc, char *argv[]) {
         }
       }
 
-      output_image("RANK1Original.jpg", local_nrows, local_ncols, image);
-      output_image("RANK1Pad.jpg", local_nrows + 1, local_ncols + 1, image_pad);
+      output_image("RANK1Original.pgm", local_nrows, local_ncols, image);
+      output_image("RANK1Pad.pgm", local_nrows + 1, local_ncols + 1, image_pad);
 
       for (int t = 0; t < niters; t++) {
         top_right_corner(local_nrows, local_ncols, image_pad, tmp_image_pad);
