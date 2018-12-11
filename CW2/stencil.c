@@ -191,7 +191,7 @@ int main(int argc, char *argv[]) {
 
     MPI_Sendrecv(sendbuf, local_nrows, MPI_DOUBLE, north, tag, recvbuf, local_nrows, MPI_DOUBLE, north, tag, MPI_COMM_WORLD, &status);
 
-    for (int j = 0; i < local_ncols; j++) {
+    for (int j = 0; j < local_ncols; j++) {
       image_pad[local_nrows + j * (local_nrows + 1)] = recvbuf[j];
     }
 
@@ -443,7 +443,7 @@ void right(const int nx, const int ny, float * restrict image, float * restrict 
 
   // when i = nx - 1, 0 < j < ny - 1
 
-  for (j = 1; j < ny - 1; j++) {
+  for (int j = 1; j < ny - 1; j++) {
     numberToadd = image[j+(nx-1)*ny] * initialMul;
     numberToadd += image[j+(nx-2)*ny] * Mul;
     numberToadd += image[j-1+(nx-1)*ny] * Mul;
