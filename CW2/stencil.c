@@ -21,6 +21,7 @@ void bottom_right_corner(const int nx, const int ny, float * restrict image, flo
 void stencil(const int nx, const int ny, float * restrict image, float * restrict tmp_image);
 void init_image(const int nx, const int ny, float * restrict image, float * restrict tmp_image);
 void output_image(const char * file_name, const int nx, const int ny, float * restrict image);
+int calc_ncols_from_rank(int rank, int size, int cols);
 double wtime(void);
 
 int main(int argc, char *argv[]) {
@@ -31,6 +32,8 @@ int main(int argc, char *argv[]) {
   int disp;              /* displacement, >1 is 'forwards', <1 is 'backwards' along a dimension */
   int dest;
   int source;
+  double *sendbuf;       /* buffer to hold values to send */
+  double *recvbuf;       /* buffer to hold received values */
   int tag = 0;
   MPI_Status status;
 
@@ -48,6 +51,10 @@ int main(int argc, char *argv[]) {
 
   int top_right;
   int bottom_right;
+
+
+  int local_nrows;
+  int local_ncols;
   // initialise our MPI environment
   MPI_Init( &argc, &argv);
 
@@ -99,11 +106,8 @@ int main(int argc, char *argv[]) {
   MPI_Barrier(MPI_COMM_WORLD);
   printf("rank: %d\n\tnorth=%d\n\tsouth=%d\n\teast=%d\n\twest=%d\n", rank,north,south,east,west);
 
-  if (rank == (size - 1)) {
-    printf("I am rank %d\n", rank);
-  }
-
-
+  top_right = size - 2;
+  bottom_right = size - 1;
 
 
   // Check usage
@@ -117,21 +121,48 @@ int main(int argc, char *argv[]) {
   int ny = atoi(argv[2]);
   int niters = atoi(argv[3]);
 
-  // Allocate the image
-  float * restrict image = malloc(sizeof(float)*nx*ny);
-  float * restrict tmp_image = malloc(sizeof(float)*nx*ny);
+  local_nrows = nx;
+  local_ncols = calc_ncols_from_rank(rank, size, ny);
 
-  // Set the input image
-  init_image(nx, ny, image, tmp_image);
+  float * restrict image0 = malloc(sizeof(float) * local_nrows * local_ncols);
+  float * restrict tmp_image0 = malloc(sizeof(float) * local_nrows * local_ncols);
 
-  // Call the stencil kernel
+  sendbuf = (double*)malloc(sizeof(double) * local_nrows);
+  recvbuf = (double*)malloc(sizeof(double) * local_nrows);
+
+  /* The last rank has the most columns apportioned.
+     printbuf must be big enough to hold this number */
+  remote_ncols = calc_ncols_from_rank(size-1, size);
+  printbuf = (double*)malloc(sizeof(double) * (remote_ncols + 2));
+
+  init_image(local_nrows, local_ncols, image0, tmp_image0);
+
   double tic = wtime();
 
-  for (int t = 0; t < niters; ++t) {
-    stencil(nx, ny, image, tmp_image);
-    stencil(nx, ny, tmp_image, image);
+  if (rank == MASTER) {
+    for (int t = 0; t < niters; t++) {
+      bottom_left_corner(local_nrows, local_ncols, image0, tmp_image0);
+      bottom_left_corner(local_nrows, local_ncols, tmp_image0, image0);
+    }
   }
-  double toc = wtime();
+
+
+  // Allocate the image
+  // float * restrict image = malloc(sizeof(float)*nx*ny);
+  // float * restrict tmp_image = malloc(sizeof(float)*nx*ny);
+  //
+  //
+  // // Set the input image
+  // init_image(nx, ny, image, tmp_image);
+  //
+  // // Call the stencil kernel
+  // double tic = wtime();
+  //
+  // for (int t = 0; t < niters; ++t) {
+  //   stencil(nx, ny, image, tmp_image);
+  //   stencil(nx, ny, tmp_image, image);
+  // }
+  // double toc = wtime();
 
 
   // Output
@@ -139,8 +170,10 @@ int main(int argc, char *argv[]) {
   printf(" runtime: %lf s\n", toc-tic);
   printf("------------------------------------\n");
 
-  output_image(OUTPUT_FILE, nx, ny, image);
-  free(image);
+  if (rank == MASTER){
+    output_image(OUTPUT_FILE, nx, ny, image0);
+  }
+  free(image0);
 
   MPI_Finalize();
 
@@ -504,6 +537,20 @@ void output_image(const char * file_name, const int nx, const int ny, float * re
   fclose(fp);
 
 }
+
+int calc_ncols_from_rank(int rank, int size, int cols)
+{
+  int ncols;
+
+  ncols = cols / size;       /* integer division */
+  if ((cols % size) != 0) {  /* if there is a remainder */
+    if (rank == size - 1)
+      ncols += cols % size;  /* add remainder to last rank */
+  }
+
+  return ncols;
+}
+
 
 // Get the current time in seconds since the Epoch
 double wtime(void) {
