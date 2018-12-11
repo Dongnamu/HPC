@@ -40,6 +40,11 @@ int main(int argc, char *argv[]) {
   int tag = 0;
   MPI_Status status;
 
+  int loop_row_start_point;
+  int loop_col_start_point;
+  int loop_row_end_point;
+  int loop_col_end_point;
+
   int north;             /* the rank of the process above this rank in the grid */
   int south;             /* the rank of the process below this rank in the grid */
   int east;              /* the rank of the process to the right of this rank in the grid */
@@ -129,6 +134,26 @@ int main(int argc, char *argv[]) {
 
   printf("Rank: %d, rows: %d, colmns %d\n", rank, local_nrows, local_ncols);
 
+  float * restrict image_original = malloc(sizeof(float) * nx * ny);
+  float * restrict tmp_image_original = malloc(sizeof(float) * nx * ny);
+
+  init_image(nx, ny, image_original, tmp_image_original);
+
+  local_usual_ncols = ny / (size * 0.5);
+  local_usual_nrows = nx / 2;
+
+  if ((rank % 2) == 1) {
+    loop_row_start_point = 0;
+    loop_row_end_point = local_usual_nrows;
+  } else {
+    loop_row_start_point = local_usual_nrows;
+    loop_row_end_point = nx;
+  }
+
+  loop_col_start_point = (rank / 2) * local_usual_ncols;
+  loop_col_end_point = loop_col_start_point + local_ncols;
+
+
   float * restrict image = malloc(sizeof(float) * local_nrows * local_ncols);
   float * restrict tmp_image = malloc(sizeof(float) * local_nrows * local_ncols);
 
@@ -140,14 +165,19 @@ int main(int argc, char *argv[]) {
     tmp_image_pad = (float*)malloc(sizeof(float) * (local_nrows + 1) * (local_ncols + 2));
   }
 
+  for (int i = loop_row_start_point; i < loop_row_end_point; i++) {
+    for (int j = loop_col_start_point; j < loop_col_end_point; j++) {
+      image[(j - loop_col_start_point) + (i - loop_row_start_point) * local_ncols] = image_original[j + i * ny];
+      tmp_image[(j - loop_col_start_point) + (i - loop_row_start_point) * local_ncols] = tmp_image_original[j + i * ny];
+    }
+  }
+
   sendbuf = (double*)malloc(sizeof(double) * local_nrows);
   recvbuf = (double*)malloc(sizeof(double) * local_nrows);
 
   /* The last rank has the most columns apportioned.
      printbuf must be big enough to hold this number */
   remote_ncols = calc_ncols_from_rank(size-1, size, ny);
-
-  init_image(local_nrows, local_ncols, image, tmp_image);
 
   double tic = wtime();
 
@@ -660,10 +690,11 @@ int calc_ncols_from_rank(int rank, int size, int cols)
 {
   int ncols;
 
-  ncols = cols / size;       /* integer division */
+  ncols = cols / (size * 0.5);       /* integer division */
   if ((cols % size) != 0) {  /* if there is a remainder */
-    if (rank == size - 1)
+    if ((rank == size - 1) || (rank == size - 2)) {
       ncols += cols % size;  /* add remainder to last rank */
+    }
   }
 
   return ncols;
