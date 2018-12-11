@@ -195,12 +195,14 @@ int main(int argc, char *argv[]) {
       image_pad[local_nrows + j * (local_nrows + 1)] = recvbuf[j];
     }
 
-    for (int i = 1; i < local_nrows + 1; i++) {
-      for (int j = 0; j < local_ncols; j++) {
-        image_pad[j + i * local_ncols] = image[j + (i - 1) * local_ncols];
-        tmp_image_pad[j + i * local_ncols] = image[j + (i - 1) * local_ncols];
+    for (int j = 0; j < local_ncols; j++) {
+      for (int i = 0; i < local_nrows; i++) {
+        image_pad[i + j * local_nrows] = image[i + j * local_nrows];
+        tmp_image_pad[i + j * local_nrows] = image[i + j * local_nrows];
       }
     }
+
+    output_image("RANK0.pgm", local_nrows, local_ncols, image_pad);
 
     for (int t = 0; t < niters; t++) {
       top_left_corner(local_nrows, local_ncols, image_pad, tmp_image_pad);
@@ -219,12 +221,14 @@ int main(int argc, char *argv[]) {
         image_pad[j * (local_nrows + 1)] = recvbuf[j];
       }
 
-      for (int i = 0; i < local_nrows; i++) {
-        for (int j = 0; j < local_ncols; j++) {
-          image_pad[j + i * local_ncols] = image[j + i * local_ncols];
-          tmp_image_pad[j + i * local_ncols] = image[j + i * local_ncols];
+      for (int j = 1; j < local_ncols; j++) {
+        for (int i = 0; i < local_nrows; i++) {
+          image_pad[i + j * (local_nrows + 1)] = image[i + (j - 1) * local_nrows];
+          tmp_image_pad[i + j * local_ncols] = image[i + (j - 1) * local_nrows];
         }
       }
+
+      output_image("RANK1.pgm", local_nrows, local_ncols, image_pad);
 
       for (int t = 0; t < niters; t++) {
         top_right_corner(local_nrows, local_ncols, image_pad, tmp_image_pad);
@@ -303,9 +307,13 @@ int main(int argc, char *argv[]) {
   printf("------------------------------------\n");
 
 
-  if (rank == 0){
-    output_image("RANK0.pgm", local_nrows, local_ncols, image_pad);
-  }
+  // if (rank == 0){
+  //   output_image("RANK0.pgm", local_nrows, local_ncols, image_pad);
+  // }
+  //
+  // if (rank == 1) {
+  //   output_image("RANK1.pgm", local_nrows, local_ncols, image_pad);
+  // }
 
   free(image);
   free(tmp_image);
