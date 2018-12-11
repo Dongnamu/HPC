@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
   int ny = atoi(argv[2]);
   int niters = atoi(argv[3]);
 
-  local_nrows = nx / 2;
+  local_nrows = calc_nrows_from_rank(rank, size, nx);
   local_ncols = calc_ncols_from_rank(rank, size, ny);
 
   float * restrict image0 = malloc(sizeof(float) * local_nrows * local_ncols);
@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
 
 
   if (rank == MASTER){
-    output_image(OUTPUT_FILE, local_nrows, local_ncols, image0);
+    output_image("RANK0.pgm", local_nrows, local_ncols, image0);
   }
 
   free(image0);
@@ -544,6 +544,19 @@ void output_image(const char * file_name, const int nx, const int ny, float * re
   // Close the file
   fclose(fp);
 
+}
+
+int calc_nrows_from_rank(int rank, int size, int rows) {
+  int nrows;
+
+  nrows = rows / 2;
+
+  if ((nrows % size) != 0) {
+    if (rank == size - 1)
+      nrows += rows % size;
+  }
+
+  return nrows;
 }
 
 int calc_ncols_from_rank(int rank, int size, int cols)
