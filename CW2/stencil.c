@@ -182,10 +182,6 @@ int main(int argc, char *argv[]) {
 
   free(image0);
 
-  if (rank == MASTER) {
-    printf("I'm here\n");
-  }
-  
   MPI_Finalize();
 
   return EXIT_SUCCESS;
@@ -523,6 +519,7 @@ void output_image(const char * file_name, const int nx, const int ny, float * re
     exit(EXIT_FAILURE);
   }
 
+
   // Ouptut image header
   fprintf(fp, "P5 %d %d 255\n", nx, ny);
 
@@ -544,6 +541,7 @@ void output_image(const char * file_name, const int nx, const int ny, float * re
     }
   }
 
+  printf("I'm opened\n");
   // Close the file
   fclose(fp);
 
