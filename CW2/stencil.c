@@ -35,7 +35,6 @@ int main(int argc, char *argv[]) {
   int source;
   double *sendbuf;       /* buffer to hold values to send */
   double *recvbuf;       /* buffer to hold received values */
-  double *printbuf;
   int tag = 0;
   MPI_Status status;
 
@@ -128,8 +127,16 @@ int main(int argc, char *argv[]) {
 
   printf("Rank: %d, rows: %d, colmns %d\n", rank, local_nrows, local_ncols);
 
-  float * restrict image0 = malloc(sizeof(float) * local_nrows * local_ncols);
-  float * restrict tmp_image0 = malloc(sizeof(float) * local_nrows * local_ncols);
+  float * restrict image = malloc(sizeof(float) * local_nrows * local_ncols);
+  float * restrict tmp_image = malloc(sizeof(float) * local_nrows * local_ncols);
+
+  if (rank == MASTER || rank == 1 || rank == top_right || rank == bottom_right) {
+    float * restrict image_pad = malloc(sizeof(float) * (local_nrows + 1) * (local_ncols + 1));
+    float * restrict tmp_image_pad = malloc(sizeof(float) * (local_nrows + 1) * (local_ncols + 1));
+  } else {
+    float * restrict image_pad = malloc(sizeof(float) * (local_nrows + 1) * (local_ncols + 2));
+    float * restrict tmp_image_pad = malloc(sizeof(float) * (local_nrows + 1) * (local_ncols + 2));
+  }
 
   sendbuf = (double*)malloc(sizeof(double) * local_nrows);
   recvbuf = (double*)malloc(sizeof(double) * local_nrows);
@@ -144,9 +151,95 @@ int main(int argc, char *argv[]) {
   double tic = wtime();
 
   if (rank == MASTER) {
+
+    for (int j = 0; j < local_ncols, j++) {
+      sendbuf[j] = image[j];
+    }
+
+    MPI_Sendrecv(sendbuf, local_nrows, MPI_DOUBLE, north, tag, recvbuf, local_nrows, MPI_DOUBLE, north, tag, MPI_COMM_WORLD, &status);
+
+    for (int j = 0; j < local_ncols, j++) {
+      image_pad[j] = recvbuf[j];
+    }
+
+    for (int i = 1; i < local_nrows + 1; i++) {
+      for (int j = 0; j < local_ncols; j++) {
+        image_pad[j + i * local_ncols] = image[j + (i - 1) * local_ncols];
+        tmp_image_pad[j + i * local_ncols] = image[j + (i - 1) * local_ncols];
+      }
+    }
+
     for (int t = 0; t < niters; t++) {
       bottom_left_corner(local_nrows, local_ncols, image0, tmp_image0);
       bottom_left_corner(local_nrows, local_ncols, tmp_image0, image0);
+    }
+  } else {
+    if (rank == 1) {
+
+      for (int j = 0; j < local_ncols, j++) {
+        sendbuf[j] = image[j + (local_nrows - 1) * local_ncols];
+      }
+
+      MPI_Sendrecv(sendbuf, local_nrows, MPI_DOUBLE, south, tag, recvbuf, local_nrows, MPI_DOUBLE, south, tag, MPI_COMM_WORLD, &status);
+
+      for (int j = 0; j < local_ncols, j++) {
+        image_pad[j + local_nrows * local_ncols] = recvbuf[j];
+      }
+
+      for (int i = 0; i < local_nrows; i++) {
+        for (int j = 0; j < local_ncols; j++) {
+          image_pad[j + i * local_ncols] = image[j + i * local_ncols];
+          tmp_image_pad[j + i * local_ncols] = image[j + i * local_ncols];
+        }
+      }
+
+      for (int t = 0; t < niters; t++) {
+        top_left_corner(local_nrows, local_ncols, image0, tmp_image0);
+        top_left_corner(local_nrows, local_ncols, tmp_image0, image0);
+      }
+    } else {
+      if (rank == top_right) {
+
+        for (int i = 0; i < local_nrows; i++) {
+          for (int j = 1; j < local_ncols + 1; j++) {
+            image_pad[j + i * local_ncols] = image[(j - 1) + i * local_ncols];
+            tmp_image_pad[j + i * local_ncols] = image[(j - 1) + i * local_ncols];
+          }
+        }
+
+
+        for (int t = 0; t < niters; t++) {
+          top_right_corner(local_nrows, local_ncols, image0, tmp_image0);
+          top_right_corner(local_nrows, local_ncols, tmp_image0, image0);
+        }
+      } else {
+        if (rank == bottom_right) {
+
+          for (int i = 1; i < local_nrows + 1; i++) {
+            for (int j = 1; j < local_ncols + 1; j++) {
+              image_pad[j + i * local_ncols] = image[j + (i - 1) * local_ncols];
+              tmp_image_pad[j + i * local_ncols] = image[j + (i - 1) * local_ncols];
+            }
+          }
+
+          for (int t = 0; t < niters; t++) {
+            bottom_right_corner(local_nrows, local_ncols, image0, tmp_image0);
+            bottom_right_corner(local_nrows, local_ncols, tmp_image0, image0);
+          }
+    //     } else {
+    //       if ((rank % 2) == 1) {
+    //         for (int t = 0; t < niters; t++) {
+    //           top(local_nrows, local_ncols, image0, tmp_image0);
+    //           top(local_nrows, local_ncols, tmp_image0, image0);
+    //         }
+    //       } else {
+    //         for (int t = 0; t < niters; t++) {
+    //           bottom(local_nrows, local_ncols, image0, tmp_image0);
+    //           bottom(local_nrows, local_ncols, tmp_image0, image0);
+    //         }
+    //       }
+        }
+      }
     }
   }
 
@@ -172,11 +265,9 @@ int main(int argc, char *argv[]) {
 
 
   // Output
-  if (rank == MASTER) {
-    printf("------------------------------------\n");
-    printf(" runtime: %lf s\n", toc-tic);
-    printf("------------------------------------\n");
-  }
+  printf("------------------------------------\n");
+  printf(" runtime: %lf s\n", toc-tic);
+  printf("------------------------------------\n");
 
 
   if (rank == MASTER){
@@ -184,6 +275,9 @@ int main(int argc, char *argv[]) {
   }
 
   free(image0);
+  free(tmp_image0);
+  free(sendbuf);
+  free(recvbuf);
 
   MPI_Finalize();
 
@@ -413,7 +507,6 @@ void bottom_right_corner(const int nx, const int ny, float * restrict image, flo
   }
 
 }
-
 
 void stencil(const int nx, const int ny, float * restrict image, float * restrict tmp_image) {
   float initialMul = 0.6f;
