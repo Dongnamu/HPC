@@ -35,6 +35,8 @@ int main(int argc, char *argv[]) {
   int source;
   double *sendbuf;       /* buffer to hold values to send */
   double *recvbuf;       /* buffer to hold received values */
+  float *image_pad;
+  float *tmp_image_pad;
   int tag = 0;
   MPI_Status status;
 
@@ -131,11 +133,11 @@ int main(int argc, char *argv[]) {
   float * restrict tmp_image = malloc(sizeof(float) * local_nrows * local_ncols);
 
   if (rank == MASTER || rank == 1 || rank == top_right || rank == bottom_right) {
-    float * restrict image_pad = malloc(sizeof(float) * (local_nrows + 1) * (local_ncols + 1));
-    float * restrict tmp_image_pad = malloc(sizeof(float) * (local_nrows + 1) * (local_ncols + 1));
+    image_pad = (float*)malloc(sizeof(float) * (local_nrows + 1) * (local_ncols + 1));
+    tmp_image_pad = (float*)malloc(sizeof(float) * (local_nrows + 1) * (local_ncols + 1));
   } else {
-    float * restrict image_pad = malloc(sizeof(float) * (local_nrows + 1) * (local_ncols + 2));
-    float * restrict tmp_image_pad = malloc(sizeof(float) * (local_nrows + 1) * (local_ncols + 2));
+    image_pad = (float*)malloc(sizeof(float) * (local_nrows + 1) * (local_ncols + 2));
+    tmp_image_pad = (float*)malloc(sizeof(float) * (local_nrows + 1) * (local_ncols + 2));
   }
 
   sendbuf = (double*)malloc(sizeof(double) * local_nrows);
@@ -273,8 +275,8 @@ int main(int argc, char *argv[]) {
     output_image("RANK0.pgm", local_nrows, local_ncols, image0);
   }
 
-  free(image0);
-  free(tmp_image0);
+  free(image);
+  free(tmp_image);
   free(sendbuf);
   free(recvbuf);
 
