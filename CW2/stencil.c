@@ -554,7 +554,7 @@ int calc_nrows_from_rank(int rank, int size, int rows) {
 
   nrows = rows / 2;
 
-  if ((nrows % size) != 0) {
+  if ((nrows % 2) != 0) {
     if (rank == size - 1)
       nrows += rows % size;
   }
