@@ -171,8 +171,8 @@ int main(int argc, char *argv[]) {
     }
 
     for (int t = 0; t < niters; t++) {
-      bottom_left_corner(local_nrows, local_ncols, image0, tmp_image0);
-      bottom_left_corner(local_nrows, local_ncols, tmp_image0, image0);
+      bottom_left_corner(local_nrows, local_ncols, image_pad, tmp_image_pad);
+      bottom_left_corner(local_nrows, local_ncols, tmp_image_pad, image_pad);
     }
   } else {
     if (rank == 1) {
@@ -195,8 +195,8 @@ int main(int argc, char *argv[]) {
       }
 
       for (int t = 0; t < niters; t++) {
-        top_left_corner(local_nrows, local_ncols, image0, tmp_image0);
-        top_left_corner(local_nrows, local_ncols, tmp_image0, image0);
+        top_left_corner(local_nrows, local_ncols, image_pad, tmp_image_pad);
+        top_left_corner(local_nrows, local_ncols, tmp_image_pad, image_pad);
       }
     } else {
       if (rank == top_right) {
@@ -210,8 +210,8 @@ int main(int argc, char *argv[]) {
 
 
         for (int t = 0; t < niters; t++) {
-          top_right_corner(local_nrows, local_ncols, image0, tmp_image0);
-          top_right_corner(local_nrows, local_ncols, tmp_image0, image0);
+          top_right_corner(local_nrows, local_ncols, image_pad, tmp_image_pad);
+          top_right_corner(local_nrows, local_ncols, tmp_image_pad, image_pad);
         }
       } else {
         if (rank == bottom_right) {
@@ -224,19 +224,19 @@ int main(int argc, char *argv[]) {
           }
 
           for (int t = 0; t < niters; t++) {
-            bottom_right_corner(local_nrows, local_ncols, image0, tmp_image0);
-            bottom_right_corner(local_nrows, local_ncols, tmp_image0, image0);
+            bottom_right_corner(local_nrows, local_ncols, image_pad, tmp_image_pad);
+            bottom_right_corner(local_nrows, local_ncols, tmp_image_pad, image_pad);
           }
     //     } else {
     //       if ((rank % 2) == 1) {
     //         for (int t = 0; t < niters; t++) {
-    //           top(local_nrows, local_ncols, image0, tmp_image0);
-    //           top(local_nrows, local_ncols, tmp_image0, image0);
+    //           top(local_nrows, local_ncols, image_pad, tmp_image_pad);
+    //           top(local_nrows, local_ncols, tmp_image_pad, image_pad);
     //         }
     //       } else {
     //         for (int t = 0; t < niters; t++) {
-    //           bottom(local_nrows, local_ncols, image0, tmp_image0);
-    //           bottom(local_nrows, local_ncols, tmp_image0, image0);
+    //           bottom(local_nrows, local_ncols, image_pad, tmp_image_pad);
+    //           bottom(local_nrows, local_ncols, tmp_image_pad, image_pad);
     //         }
     //       }
         }
@@ -272,7 +272,7 @@ int main(int argc, char *argv[]) {
 
 
   if (rank == MASTER){
-    output_image("RANK0.pgm", local_nrows, local_ncols, image0);
+    output_image("RANK0.pgm", local_nrows, local_ncols, image_pad);
   }
 
   free(image);
