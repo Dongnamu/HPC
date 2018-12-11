@@ -303,8 +303,8 @@ int main(int argc, char *argv[]) {
   printf("------------------------------------\n");
 
 
-  if (rank == 1){
-    output_image("RANK1.pgm", local_nrows, local_ncols, image_pad);
+  if (rank == 3){
+    output_image("RANK3.pgm", local_nrows, local_ncols, image_pad);
   }
 
   free(image);
