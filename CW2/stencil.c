@@ -441,7 +441,7 @@ void right(const int nx, const int ny, float * restrict image, float * restrict 
 
   // when i = nx - 1, 0 < j < ny - 1
 
-  for (j = 1; j < ny - 1; j++) {
+  for (int j = 1; j < ny - 1; j++) {
     numberToadd = image[j+(nx-1)*ny] * initialMul;
     numberToadd += image[j+(nx-2)*ny] * Mul;
     numberToadd += image[j-1+(nx-1)*ny] * Mul;
