@@ -1,7 +1,7 @@
 EXES=stencil
 
 stencil: stencil.c
-	mpicc -xHost -Ofast -std=c99 -Wall -o $@ $^
+	mpicc -Ofast -std=c99 -Wall -o $@ $^
 
 all: $(EXES)
 

@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
   int coords[N_DIMENSION];     /* array to hold the grid coordinates for a rank */
   MPI_Comm comm_cart;    /* a cartesian topology aware communicator */
 
-  int bottom_left;
+  int top_right;
   int bottom_right;
 
 
@@ -114,9 +114,9 @@ int main(int argc, char *argv[]) {
   MPI_Cart_shift(comm_cart, direction, disp, &south, &north);
 
   MPI_Barrier(MPI_COMM_WORLD);
-  printf("rank: %d\n\tnorth=%d\n\tsouth=%d\n\teast=%d\n\twest=%d\n", rank,north,south,east,west);
+  // printf("rank: %d\n\tnorth=%d\n\tsouth=%d\n\teast=%d\n\twest=%d\n", rank,north,south,east,west);
 
-  bottom_left = size - 2;
+  top_right = size - 2;
   bottom_right = size - 1;
 
 
@@ -131,57 +131,48 @@ int main(int argc, char *argv[]) {
   int ny = atoi(argv[2]);
   int niters = atoi(argv[3]);
 
-  local_nrows = calc_nrows_from_rank(rank, size, nx);
-  local_ncols = calc_ncols_from_rank(rank, size, ny);
-
-  printf("Rank: %d, rows: %d, colmns %d\n", rank, local_nrows, local_ncols);
+  local_nrows = calc_nrows_from_rank(rank, size, ny);
+  local_ncols = calc_ncols_from_rank(rank, size, nx);
 
   float * restrict image_original = malloc(sizeof(float) * nx * ny);
   float * restrict tmp_image_original = malloc(sizeof(float) * nx * ny);
 
   init_image(nx, ny, image_original, tmp_image_original);
 
-  local_usual_ncols = ny / 2;
-  local_usual_nrows = nx / (size * 0.5);
+  local_usual_ncols = nx / (size * 0.5);
+  local_usual_nrows = ny / 2;
 
-  if ((rank % 2) == 1) {
+  if ((rank % 2) != 1) {
     loop_row_start_point = 0;
     loop_row_end_point = local_usual_nrows;
   } else {
     loop_row_start_point = local_usual_nrows;
-    loop_row_end_point = nx;
+    loop_row_end_point = ny;
   }
 
   loop_col_start_point = (rank / 2) * local_usual_ncols;
   loop_col_end_point = loop_col_start_point + local_ncols;
 
-
   float * restrict image = malloc(sizeof(float) * local_nrows * local_ncols);
   float * restrict tmp_image = malloc(sizeof(float) * local_nrows * local_ncols);
 
-  if (rank == MASTER || rank == 1 || rank == bottom_left || rank == bottom_right) {
+  if (rank == MASTER || rank == 1 || rank == top_right || rank == bottom_right) {
+    printf("Rank %d is here0\n", rank);
     image_pad = (float*)malloc(sizeof(float) * (local_nrows + 1) * (local_ncols + 1));
     tmp_image_pad = (float*)malloc(sizeof(float) * (local_nrows + 1) * (local_ncols + 1));
+    printf("Rank %d is here1\n", rank);
+
   } else {
     image_pad = (float*)malloc(sizeof(float) * (local_nrows + 1) * (local_ncols + 2));
     tmp_image_pad = (float*)malloc(sizeof(float) * (local_nrows + 1) * (local_ncols + 2));
   }
 
-  for (int i = loop_row_start_point; i < loop_row_end_point; i++) {
-    for (int j = loop_col_start_point; j < loop_col_end_point;  j++) {
+  for (int i = loop_row_start_point; i < loop_row_end_point;  i++) {
+    for (int j = loop_col_start_point; j < loop_col_end_point; j++) {
       image[(j - loop_col_start_point) + (i - loop_row_start_point) * local_ncols] = image_original[j + i * ny];
-      tmp_image[(j - loop_col_start_point) + (i - loop_row_start_point) * local_ncols] = tmp_image_original[j + i * ny];
+      tmp_image[(j - loop_row_start_point) + (i - loop_col_start_point) * local_ncols] = tmp_image_original[j + i * ny];
     }
   }
-
-  if (rank == 0) {
-    output_image("RANK0.pgm", local_nrows, local_ncols, image);
-  }
-  if (rank == 1) {
-    output_image("RANK1.pgm", local_nrows, local_ncols, image);
-  }
-
-
 
   sendbuf = (double*)malloc(sizeof(double) * local_nrows);
   recvbuf = (double*)malloc(sizeof(double) * local_nrows);
@@ -191,6 +182,61 @@ int main(int argc, char *argv[]) {
   remote_ncols = calc_ncols_from_rank(size-1, size, ny);
 
   double tic = wtime();
+
+  if (rank == MASTER) {
+    // for (int j = 0; j < local_ncols; j++) {
+      // sendbuf[j] = image[j + (local_nrows - 2) * (local_ncols)];
+    // }
+
+    // MPI_Sendrecv(sendbuf, local_nrows, MPI_DOUBLE, south, tag, recvbuf, local_nrows, MPI_DOUBLE, south, tag, MPI_COMM_WORLD, &status);
+
+    // for (int j = 0; j < local_ncols; j++) {
+      // image_pad[j + (local_nrows - 1) * (local_ncols + 1)] = recvbuf[j];
+      // }
+
+    // for (int i = 0; i < local_nrows; i++) {
+    //   for (int j = 0; j < local_ncols; j++) {
+    //     image_pad[j + i * (local_ncols + 1)] = image[j + i * local_ncols];
+    //     tmp_image_pad[j + i * (local_ncols + 1)] = image[j + i * local_ncols];
+    //   }
+    // }
+
+    // output_image("RANK0Original.pgm", local_ncols, local_nrows, image);
+    // output_image("RANK0Pad.pgm", local_ncols + 1, local_nrows + 1, image_pad);
+
+
+    // for (int t = 0; t < niters; t++) {
+      // top_left_corner(local_nrows, local_ncols, image_pad, tmp_image_pad);
+      // top_left_corner(local_nrows, local_ncols, tmp_image_pad, image_pad);
+    // }
+  } else {
+    if ((rank / 2) == 0 && (rank % 2) == 1) {
+      // for (int j = 0; j < local_ncols; j++) {
+      // sendbuf[j] = image[j];
+      // }
+
+      // MPI_Sendrecv(sendbuf, local_nrows, MPI_DOUBLE, north, tag, recvbuf, local_nrows, MPI_DOUBLE, north, tag, MPI_COMM_WORLD, &status);
+
+      // for (int j = 0; j < local_ncols; j++) {
+      //   image_pad[j] = recvbuf[j];
+      // }
+
+        // for (int i = 1; i < local_nrows + 1; i++) {
+        //   for (int j = 0; j < local_ncols; j++) {
+        //     image_pad[j + i * (local_ncols + 1)] = image[j + (i - 1) * local_ncols];
+        //     tmp_image_pad[j + i * (local_ncols + 1)] = image[j + (i - 1) * local_ncols];
+        //   }
+        // }
+
+      // output_image("RANK1Original.pgm", local_ncols, local_nrows, image);
+      // output_image("RANK1Pad.pgm", local_ncols + 1, local_nrows + 1, image_pad);
+
+      // for (int t = 0; t < niters; t++) {
+        // top_right_corner(local_nrows, local_ncols, image_pad, tmp_image_pad);
+        // top_right_corner(local_nrows, local_ncols, tmp_image_pad, image_pad);
+      // }
+    }
+  }
 
   double toc = wtime();
 
@@ -583,7 +629,7 @@ void output_image(const char * file_name, const int nx, const int ny, float * re
   float maximum = 0.0;
   for (int i = 0; i < ny; ++i) {
     for (int j = 0; j < nx; ++j) {
-      if (image[j+i*ny] > maximum)
+      if (image[j+i*nx] > maximum)
         maximum = image[j+i*ny];
     }
   }
@@ -591,7 +637,7 @@ void output_image(const char * file_name, const int nx, const int ny, float * re
   // Output image, converting to numbers 0-255
   for (int j = 0; j < ny; ++j) {
     for (int i = 0; i < nx; ++i) {
-      fputc((char)(255.0*image[j+i*ny]/maximum), fp);
+      fputc((char)(255.0*image[i+j*nx]/maximum), fp);
     }
   }
 
@@ -603,7 +649,7 @@ void output_image(const char * file_name, const int nx, const int ny, float * re
 int calc_nrows_from_rank(int rank, int size, int rows) {
   int nrows;
 
-  int nsize = size * 0.5;
+  int nsize = 2;
 
   nrows = rows / nsize;
 
@@ -619,7 +665,7 @@ int calc_ncols_from_rank(int rank, int size, int cols)
 {
   int ncols;
 
-  int nsize = 2;
+  int nsize = size * 0.5;
 
   ncols = cols / nsize;       /* integer division */
   if (cols % nsize != 0) {  /* if there is a remainder */
