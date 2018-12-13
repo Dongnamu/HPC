@@ -319,7 +319,7 @@ int main(int argc, char *argv[]) {
     add_time = add_time / size;
 
     printf("------------------------------------\n");
-    printf(" runtime: %lf s\n", toc-tic);
+    printf(" runtime: %lf s\n", add_time);
     printf("------------------------------------\n");
 
   } else {
