@@ -312,7 +312,7 @@ int main(int argc, char *argv[]) {
     add_time = add_time + final_time;
 
     for (int k = 1; k < size; k++) {
-      MPI_Recv(recvbuf, 1, MPI_DOUBLE, k, tag, MPI_COMM_WORLD, &status);
+      MPI_Recv(recvbuf, 4, MPI_DOUBLE, k, tag, MPI_COMM_WORLD, &status);
       add_time = add_time + recvbuf[0];
     }
 
