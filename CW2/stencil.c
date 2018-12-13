@@ -93,11 +93,13 @@ int main(int argc, char *argv[]) {
     periods[ii] = 1; /* set periodic boundary conditions to True for all dimensions */
   }
 
-  MPI_Dims_create(size, N_DIMENSION, dims);
-  if(rank == MASTER) {
-    printf("ranks spread over a grid of %d dimension(s): [%d,%d]\n", N_DIMENSION, dims[0], dims[1]);
-  }
+  // MPI_Dims_create(size, N_DIMENSION, dims);
+  // if(rank == MASTER) {
+  //   printf("ranks spread over a grid of %d dimension(s): [%d,%d]\n", N_DIMENSION, dims[0], dims[1]);
+  // }
 
+  dims[0] = size / 2;
+  dims[1] = 2;
   MPI_Cart_create(MPI_COMM_WORLD, N_DIMENSION, dims, periods, reorder, &comm_cart);
 
   MPI_Cart_coords(comm_cart, rank, N_DIMENSION, coords);
