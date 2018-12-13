@@ -170,14 +170,8 @@ int main(int argc, char *argv[]) {
 
     output_image("output.pgm", nx, ny, image_original);
 
-    free(image);
-    free(tmp_image);
     free(image_original);
     free(tmp_image_original);
-    free(image_pad);
-    free(tmp_image_pad);
-    free(sendbuf);
-    free(recvbuf);
 
     MPI_Finalize();
 
