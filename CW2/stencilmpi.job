@@ -9,7 +9,7 @@
 #PBS -m a
 
 #! application name
-application="./stencil"
+application="stencil"
 
 #! Run options for the application
 options="1024 1024 100"
@@ -35,4 +35,4 @@ cat $PBS_NODEFILE > machine.file.$PBS_JOBID
 numnodes=`wc $PBS_NODEFILE | awk '{ print $1 }'`
 
 #! Run the parallel MPI executable (nodes*ppn)
-mpirun -np $numnodes -machinefile machine.file.$PBS_JOBID $application $options
+mpirun -np $numnodes $application $options
