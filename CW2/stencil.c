@@ -12,13 +12,14 @@
 #define TOP_LEFT = 1
 #define BOTTOM_LEFT = 0
 
+void padding(const int rank, const int top_right, const int bottom_right, const int local_ncols, const int local_nrows, const int local_orows, const int local_ocols, float * restrict image, float * restrict image_pad, float* restrict tmp_image_pad);
+void process(const int rank, const int north, const int south, const int east, const int west, const int top_right, const int bottom_right, const int niters, const int local_ncols, const int local_nrows, const int local_orows, const int local_ocols, float * restrict image_pad, float * restrict tmp_image_pad, double * sendbuf, double * recvbuf, int tag, MPI_Status status);
 void top_left_corner(const int nx, const int ny, float * restrict image, float * restrict tmp_image);
 void bottom_left_corner(const int nx, const int ny, float * restrict image, float * restrict tmp_image);
 void top(const int nx, const int ny, float * restrict image, float * restrict tmp_image);
 void bottom(const int nx, const int ny, float * restrict image, float * restrict tmp_image);
 void top_right_corner(const int nx, const int ny, float * restrict image, float * restrict tmp_image);
 void bottom_right_corner(const int nx, const int ny, float * restrict image, float * restrict tmp_image);
-void stencil(const int nx, const int ny, float * restrict image, float * restrict tmp_image);
 void init_image(const int nx, const int ny, float * restrict image, float * restrict tmp_image);
 void output_image(const char * file_name, const int nx, const int ny, float * restrict image);
 int calc_nrows_from_rank(int rank, int size, int rows);
@@ -31,12 +32,10 @@ int main(int argc, char *argv[]) {
   int size;              /* number of processes in the communicator */
   int direction;         /* the coordinate dimension of a shift */
   int disp;              /* displacement, >1 is 'forwards', <1 is 'backwards' along a dimension */
-  int dest;
-  int source;
   double *sendbuf;       /* buffer to hold values to send */
   double *recvbuf;       /* buffer to hold received values */
-  float *image_pad;
-  float *tmp_image_pad;
+  float* image_pad;
+  float* tmp_image_pad;
   int tag = 0;
   MPI_Status status;
 
@@ -65,7 +64,6 @@ int main(int argc, char *argv[]) {
   int local_ncols;
   int local_usual_ncols;
   int local_usual_nrows;
-  int remote_ncols;
   // initialise our MPI environment
   MPI_Init( &argc, &argv);
 
@@ -134,8 +132,12 @@ int main(int argc, char *argv[]) {
   local_nrows = calc_nrows_from_rank(rank, size, ny);
   local_ncols = calc_ncols_from_rank(rank, size, nx);
 
+  int local_orows = local_nrows + 1;
+  int local_ocols = local_ncols + 1;
+
   float * restrict image_original = malloc(sizeof(float) * nx * ny);
   float * restrict tmp_image_original = malloc(sizeof(float) * nx * ny);
+
 
   init_image(nx, ny, image_original, tmp_image_original);
 
@@ -153,113 +155,159 @@ int main(int argc, char *argv[]) {
   loop_col_start_point = (rank / 2) * local_usual_ncols;
   loop_col_end_point = loop_col_start_point + local_ncols;
 
+  // memory allocation
   float * restrict image = malloc(sizeof(float) * local_nrows * local_ncols);
   float * restrict tmp_image = malloc(sizeof(float) * local_nrows * local_ncols);
 
   if (rank == MASTER || rank == 1 || rank == top_right || rank == bottom_right) {
-    printf("Rank %d is here0\n", rank);
-    image_pad = (float*)malloc(sizeof(float) * (local_nrows + 1) * (local_ncols + 1));
-    tmp_image_pad = (float*)malloc(sizeof(float) * (local_nrows + 1) * (local_ncols + 1));
-    printf("Rank %d is here1\n", rank);
+    image_pad = (float*) malloc(sizeof(float) * (local_orows) * (local_ocols));
+    tmp_image_pad = (float*) malloc(sizeof(float) * (local_orows) * (local_ocols));
 
+    for (int i = 0; i < local_orows; i++) {
+      for (int j = 0; j < local_ocols; j++) {
+        image_pad[j + i * local_ocols] = 0;
+        tmp_image_pad[j + i * local_ocols] = 0;
+      }
+    }
   } else {
-    image_pad = (float*)malloc(sizeof(float) * (local_nrows + 1) * (local_ncols + 2));
-    tmp_image_pad = (float*)malloc(sizeof(float) * (local_nrows + 1) * (local_ncols + 2));
+    image_pad = (float*) malloc(sizeof(float) * (local_orows) * (local_ncols + 2));
+    tmp_image_pad = (float*) malloc(sizeof(float) * (local_orows) * (local_ncols + 2));
+    for (int i = 0; i < local_orows; i++) {
+      for (int j = 0; j < local_ncols + 2; j++) {
+        image_pad[j + i * (local_ncols + 2)] = 0;
+        tmp_image_pad[j + i * (local_ncols + 2)] = 0;
+      }
+    }
   }
 
+  // Splitting image
   for (int i = loop_row_start_point; i < loop_row_end_point;  i++) {
     for (int j = loop_col_start_point; j < loop_col_end_point; j++) {
-      image[(j - loop_col_start_point) + (i - loop_row_start_point) * local_ncols] = image_original[j + i * ny];
-      tmp_image[(j - loop_row_start_point) + (i - loop_col_start_point) * local_ncols] = tmp_image_original[j + i * ny];
+      image[(j - loop_col_start_point) + (i - loop_row_start_point) * local_ncols] = image_original[j + i * nx];
+      tmp_image[(j - loop_col_start_point) + (i - loop_row_start_point) * local_ncols] = tmp_image_original[j + i * nx];
     }
   }
 
-  sendbuf = (double*)malloc(sizeof(double) * local_nrows);
-  recvbuf = (double*)malloc(sizeof(double) * local_nrows);
 
-  /* The last rank has the most columns apportioned.
-     printbuf must be big enough to hold this number */
-  remote_ncols = calc_ncols_from_rank(size-1, size, ny);
+  sendbuf = (double*)malloc(sizeof(double) * (local_orows));
+  recvbuf = (double*)malloc(sizeof(double) * (local_orows));
 
+  //padding
+  padding(rank, top_right, bottom_right, local_ncols, local_nrows, local_orows, local_ocols, image, image_pad, tmp_image_pad);
+
+  //start timer
   double tic = wtime();
-
-  if (rank == MASTER) {
-    // for (int j = 0; j < local_ncols; j++) {
-      // sendbuf[j] = image[j + (local_nrows - 2) * (local_ncols)];
-    // }
-
-    // MPI_Sendrecv(sendbuf, local_nrows, MPI_DOUBLE, south, tag, recvbuf, local_nrows, MPI_DOUBLE, south, tag, MPI_COMM_WORLD, &status);
-
-    // for (int j = 0; j < local_ncols; j++) {
-      // image_pad[j + (local_nrows - 1) * (local_ncols + 1)] = recvbuf[j];
-      // }
-
-    // for (int i = 0; i < local_nrows; i++) {
-    //   for (int j = 0; j < local_ncols; j++) {
-    //     image_pad[j + i * (local_ncols + 1)] = image[j + i * local_ncols];
-    //     tmp_image_pad[j + i * (local_ncols + 1)] = image[j + i * local_ncols];
-    //   }
-    // }
-
-    // output_image("RANK0Original.pgm", local_ncols, local_nrows, image);
-    // output_image("RANK0Pad.pgm", local_ncols + 1, local_nrows + 1, image_pad);
-
-
-    // for (int t = 0; t < niters; t++) {
-      // top_left_corner(local_nrows, local_ncols, image_pad, tmp_image_pad);
-      // top_left_corner(local_nrows, local_ncols, tmp_image_pad, image_pad);
-    // }
-  } else {
-    if ((rank / 2) == 0 && (rank % 2) == 1) {
-      // for (int j = 0; j < local_ncols; j++) {
-      // sendbuf[j] = image[j];
-      // }
-
-      // MPI_Sendrecv(sendbuf, local_nrows, MPI_DOUBLE, north, tag, recvbuf, local_nrows, MPI_DOUBLE, north, tag, MPI_COMM_WORLD, &status);
-
-      // for (int j = 0; j < local_ncols; j++) {
-      //   image_pad[j] = recvbuf[j];
-      // }
-
-        // for (int i = 1; i < local_nrows + 1; i++) {
-        //   for (int j = 0; j < local_ncols; j++) {
-        //     image_pad[j + i * (local_ncols + 1)] = image[j + (i - 1) * local_ncols];
-        //     tmp_image_pad[j + i * (local_ncols + 1)] = image[j + (i - 1) * local_ncols];
-        //   }
-        // }
-
-      // output_image("RANK1Original.pgm", local_ncols, local_nrows, image);
-      // output_image("RANK1Pad.pgm", local_ncols + 1, local_nrows + 1, image_pad);
-
-      // for (int t = 0; t < niters; t++) {
-        // top_right_corner(local_nrows, local_ncols, image_pad, tmp_image_pad);
-        // top_right_corner(local_nrows, local_ncols, tmp_image_pad, image_pad);
-      // }
-    }
-  }
+  //communication & process
+  process(rank, north, south, east, west, top_right, bottom_right, niters, local_ncols, local_nrows, local_orows, local_ocols, image_pad, tmp_image_pad, sendbuf, recvbuf, tag, status);
 
   double toc = wtime();
 
+  if (rank == MASTER) {
+    for (int i = 0; i < local_nrows; i++) {
+      for (int j = 0; j < local_ncols; j++) {
+        tmp_image_original[j + i * nx] = image_pad[j + i * local_ocols];
+      }
+    }
 
-  // Allocate the image
-  // float * restrict image = malloc(sizeof(float)*nx*ny);
-  // float * restrict tmp_image = malloc(sizeof(float)*nx*ny);
-  //
-  //
-  // // Set the input image
-  // init_image(nx, ny, image, tmp_image);
-  //
-  // // Call the stencil kernel
-  // double tic = wtime();
-  //
-  // for (int t = 0; t < niters; ++t) {
-  //   stencil(nx, ny, image, tmp_image);
-  //   stencil(nx, ny, tmp_image, image);
-  // }
-  // double toc = wtime();
+    int rank_rows;
+    int rank_cols;
+    int rank_start_row;
+    int rank_start_col;
 
+    for (int k = 1; k < size; k++) {
+      MPI_Recv(recvbuf, 4, MPI_DOUBLE, k, tag, MPI_COMM_WORLD, &status);
 
-  // Output
+      rank_rows = recvbuf[0];
+      rank_cols = recvbuf[1];
+      rank_start_row = recvbuf[2];
+      rank_start_col = recvbuf[3];
+
+      for (int i = 0; i < rank_rows; i++) {
+        MPI_Recv(recvbuf, rank_rows, MPI_DOUBLE, k, tag, MPI_COMM_WORLD, &status);
+        for (int j = 0; j < rank_cols; j++) {
+          tmp_image_original[(j + rank_start_col ) + (i + rank_start_row) * nx] = recvbuf[j];
+        }
+      }
+    }
+    output_image("output.pgm", nx, ny, tmp_image_original);
+  } else {
+    if (rank == 1) {
+      sendbuf[0] = local_nrows;
+      sendbuf[1] = local_ncols;
+      sendbuf[2] = loop_row_start_point;
+      sendbuf[3] = loop_col_start_point;
+      MPI_Send(sendbuf, 4, MPI_DOUBLE, MASTER, tag, MPI_COMM_WORLD);
+
+      for (int i = 1; i < local_orows; i++) {
+        for (int j = 0; j < local_ncols; j++) {
+          sendbuf[j] = image_pad[j + i * local_ocols];
+        }
+        MPI_Send(sendbuf, local_nrows, MPI_DOUBLE, MASTER, tag, MPI_COMM_WORLD);
+      }
+    } else {
+      if (rank == top_right) {
+        sendbuf[0] = local_nrows;
+        sendbuf[1] = local_ncols;
+        sendbuf[2] = loop_row_start_point;
+        sendbuf[3] = loop_col_start_point;
+        MPI_Send(sendbuf, 4, MPI_DOUBLE, MASTER, tag, MPI_COMM_WORLD);
+
+        for (int i = 0; i < local_nrows; i++) {
+          for (int j = 1; j < local_ocols; j++) {
+            sendbuf[(j - 1)] = image_pad[j + i * local_ocols];
+          }
+          MPI_Send(sendbuf, local_nrows, MPI_DOUBLE, MASTER, tag, MPI_COMM_WORLD);
+        }
+
+      } else {
+        if (rank == bottom_right) {
+          sendbuf[0] = local_nrows;
+          sendbuf[1] = local_ncols;
+          sendbuf[2] = loop_row_start_point;
+          sendbuf[3] = loop_col_start_point;
+          MPI_Send(sendbuf, 4, MPI_DOUBLE, MASTER, tag, MPI_COMM_WORLD);
+
+          for (int i = 1; i < local_orows; i++) {
+            for (int j = 1; j < local_ocols; j++) {
+              sendbuf[(j - 1)] = image_pad[j + i * local_ocols];
+            }
+            MPI_Send(sendbuf, local_nrows, MPI_DOUBLE, MASTER, tag, MPI_COMM_WORLD);
+          }
+        } else {
+          if ((rank % 2) == 0) {
+            sendbuf[0] = local_nrows;
+            sendbuf[1] = local_ncols;
+            sendbuf[2] = loop_row_start_point;
+            sendbuf[3] = loop_col_start_point;
+            MPI_Send(sendbuf, 4, MPI_DOUBLE, MASTER, tag, MPI_COMM_WORLD);
+
+            for (int i = 0; i < local_nrows; i++) {
+              for (int j = 1; j < local_ocols; j++) {
+                sendbuf[(j - 1)] = image_pad[j + i * (local_ncols + 2)];
+              }
+              MPI_Send(sendbuf, local_nrows, MPI_DOUBLE, MASTER, tag, MPI_COMM_WORLD);
+            }
+          } else {
+            if ((rank % 2) == 1) {
+              sendbuf[0] = local_nrows;
+              sendbuf[1] = local_ncols;
+              sendbuf[2] = loop_row_start_point;
+              sendbuf[3] = loop_col_start_point;
+              MPI_Send(sendbuf, 4, MPI_DOUBLE, MASTER, tag, MPI_COMM_WORLD);
+
+              for (int i = 1; i < local_orows; i++) {
+                for (int j = 1; j < local_ocols; j++) {
+                  sendbuf[(j - 1)] = image_pad[j + i * (local_ncols + 2)];
+                }
+                MPI_Send(sendbuf, local_nrows, MPI_DOUBLE, MASTER, tag, MPI_COMM_WORLD);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
   printf("------------------------------------\n");
   printf(" runtime: %lf s\n", toc-tic);
   printf("------------------------------------\n");
@@ -271,6 +319,10 @@ int main(int argc, char *argv[]) {
 
   free(image);
   free(tmp_image);
+  free(image_original);
+  free(tmp_image_original);
+  free(image_pad);
+  free(tmp_image_pad);
   free(sendbuf);
   free(recvbuf);
 
@@ -279,51 +331,482 @@ int main(int argc, char *argv[]) {
   return EXIT_SUCCESS;
 }
 
+void padding(const int rank, const int top_right, const int bottom_right, const int local_ncols, const int local_nrows, const int local_orows, const int local_ocols, float * restrict image, float * restrict image_pad, float* restrict tmp_image_pad) {
+  if (rank == MASTER) {
+    for (int i = 0; i < local_nrows; i++) {
+      for (int j = 0; j < local_ncols; j++) {
+        image_pad[j + i * (local_ocols)] = image[j + i * local_ncols];
+      }
+    }
+  } else {
+    if (rank == 1) {
+      for (int i = 1; i < local_orows; i++) {
+        for (int j = 0; j < local_ncols; j++) {
+          image_pad[j + i * (local_ocols)] = image[j + (i - 1) * local_ncols];
+        }
+      }
+    } else {
+      if (rank == top_right) {
+        for (int i = 0; i < local_nrows; i++) {
+          for (int j = 1; j < local_ocols; j++) {
+            image_pad[j + i * (local_ocols)] = image[(j - 1) + i * local_ncols];
+          }
+        }
+      } else {
+        if (rank == bottom_right) {
+          for (int i = 1; i < local_orows; i++) {
+            for (int j = 1; j < local_ocols; j++) {
+              image_pad[j + i * (local_ocols)] = image[(j - 1) + (i - 1) * local_ncols];
+            }
+          }
+        } else {
+          if ((rank % 2) == 0) {
+            for (int i = 0; i < local_nrows; i++) {
+              for (int j = 1; j < local_ocols; j++) {
+                image_pad[j + i * (local_ncols + 2)] = image[(j - 1) + i * local_ncols];
+              }
+            }
+          } else {
+            if ((rank % 2) == 1) {
+              for (int i = 1; i < local_orows; i++) {
+                for (int j = 1; j < local_ocols; j++) {
+                  image_pad[j + i * (local_ncols + 2)] = image[(j - 1) + (i - 1) * local_ncols];
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+void process(const int rank, const int north, const int south, const int east, const int west, const int top_right, const int bottom_right, const int niters, const int local_ncols, const int local_nrows, const int local_orows, const int local_ocols, float * restrict image_pad, float * restrict tmp_image_pad, double * sendbuf, double * recvbuf, int tag, MPI_Status status) {
+  for (int t = 0; t < niters; ++t) {
+    if (rank == MASTER) {
+
+      //first
+      for (int j = 0; j < local_ncols; j++) {
+        sendbuf[j] = image_pad[j + (local_nrows - 1) * (local_ocols)];
+      }
+
+      MPI_Sendrecv(sendbuf, (local_orows), MPI_DOUBLE, south, tag, recvbuf, (local_orows), MPI_DOUBLE, south, tag, MPI_COMM_WORLD, &status);
+
+      for (int j = 0; j < local_ncols; j++) {
+        image_pad[j + (local_nrows) * (local_ocols)] = recvbuf[j];
+      }
+
+      for (int i = 0; i < local_nrows; i++) {
+        sendbuf[i] = image_pad[(local_ncols - 1) + i * (local_ocols)];
+      }
+
+      MPI_Sendrecv(sendbuf, (local_orows), MPI_DOUBLE, east, tag, recvbuf, (local_orows), MPI_DOUBLE, east, tag, MPI_COMM_WORLD, &status);
+
+      for (int i = 0; i < local_nrows; i++) {
+          image_pad[local_ncols + i * (local_ocols)] = recvbuf[i];
+      }
+
+      top_left_corner((local_ocols), (local_orows), image_pad, tmp_image_pad);
+
+      //second
+      for (int j = 0; j < local_ncols; j++) {
+        sendbuf[j] = tmp_image_pad[j + (local_nrows - 1) * (local_ocols)];
+      }
+
+      MPI_Sendrecv(sendbuf, (local_orows), MPI_DOUBLE, south, tag, recvbuf, (local_orows), MPI_DOUBLE, south, tag, MPI_COMM_WORLD, &status);
+
+      for (int j = 0; j < local_ncols; j++) {
+        tmp_image_pad[j + (local_nrows) * (local_ocols)] = recvbuf[j];
+      }
+
+      for (int i = 0; i < local_nrows; i++) {
+        sendbuf[i] = tmp_image_pad[(local_ncols - 1) + i * (local_ocols)];
+      }
+
+      MPI_Sendrecv(sendbuf, (local_orows), MPI_DOUBLE, east, tag, recvbuf, (local_orows), MPI_DOUBLE, east, tag, MPI_COMM_WORLD, &status);
+
+      for (int i = 0; i < local_nrows; i++) {
+          tmp_image_pad[local_ncols + i * (local_ocols)] = recvbuf[i];
+      }
+      top_left_corner((local_ocols), (local_orows), tmp_image_pad, image_pad);
+
+      // for (int i = 0; i < local_nrows; i++) {
+      //   for (int j = 0; j < local_ncols; j++) {
+      //     printf(" %f |", image_pad[j + i * local_ocols]);
+      //   }
+      //   printf("\n");
+      // }
+      // printf("\n");
+
+      // output_image("RANK0.pgm", local_ocols, local_orows, image_pad);
+
+    } else {
+      if (rank == 1) {
+
+        //first
+        for (int j = 0; j < local_ncols; j++) {
+          sendbuf[j] = image_pad[j + local_ocols];
+        }
+
+        MPI_Sendrecv(sendbuf, (local_orows), MPI_DOUBLE, north, tag, recvbuf, (local_orows), MPI_DOUBLE, north, tag, MPI_COMM_WORLD, &status);
+
+        for (int j = 0; j < local_ncols; j++) {
+          image_pad[j] = recvbuf[j];
+
+        }
+
+        for (int i = 1; i < local_orows; i++) {
+          sendbuf[i - 1] = image_pad[(local_ncols - 1) + i * (local_ocols)];
+        }
+
+        MPI_Sendrecv(sendbuf, (local_orows), MPI_DOUBLE, east, tag, recvbuf, (local_orows), MPI_DOUBLE, east, tag, MPI_COMM_WORLD, &status);
+
+        for (int i = 1; i < local_orows; i++) {
+          image_pad[local_ncols + i * (local_ocols)] = recvbuf[i - 1];
+        }
+
+        bottom_left_corner((local_ocols), (local_orows), image_pad, tmp_image_pad);
+
+        //seconds
+        for (int j = 0; j < local_ncols; j++) {
+          sendbuf[j] = tmp_image_pad[j + local_ocols];
+        }
+
+        MPI_Sendrecv(sendbuf, (local_orows), MPI_DOUBLE, north, tag, recvbuf, (local_orows), MPI_DOUBLE, north, tag, MPI_COMM_WORLD, &status);
+
+        for (int j = 0; j < local_ncols; j++) {
+          tmp_image_pad[j] = recvbuf[j];
+        }
+
+        for (int i = 1; i < local_orows; i++) {
+          sendbuf[i - 1] = tmp_image_pad[(local_ncols - 1) + i * (local_ocols)];
+        }
+
+        MPI_Sendrecv(sendbuf, (local_orows), MPI_DOUBLE, east, tag, recvbuf, (local_orows), MPI_DOUBLE, east, tag, MPI_COMM_WORLD, &status);
+
+        for (int i = 1; i < local_orows; i++) {
+          tmp_image_pad[local_ncols + i * (local_ocols)] = recvbuf[i - 1];
+        }
+        bottom_left_corner((local_ocols), (local_orows), tmp_image_pad, image_pad);
+
+
+        // output_image("RANK1.pgm", local_ocols, local_orows, image_pad);
+
+      } else {
+        if (rank == top_right) {
+          //first
+          for (int i = 0; i < local_nrows; i++) {
+            sendbuf[i] = image_pad[1 + i * (local_ocols)];
+          }
+
+          MPI_Sendrecv(sendbuf, (local_orows), MPI_DOUBLE, west, tag, recvbuf, (local_orows), MPI_DOUBLE, west, tag, MPI_COMM_WORLD, &status);
+
+          for (int i = 0; i < local_nrows; i++) {
+            image_pad[i * (local_ocols)] = recvbuf[i];
+          }
+
+          for (int j = 1; j < local_ocols; j++) {
+            sendbuf[j - 1] = image_pad[j + (local_nrows - 1) * (local_ocols)];
+          }
+
+          MPI_Sendrecv(sendbuf, (local_orows), MPI_DOUBLE, south, tag, recvbuf, (local_orows), MPI_DOUBLE, south, tag, MPI_COMM_WORLD, &status);
+
+          for (int j = 1; j < (local_ocols); j++) {
+            image_pad[j + local_nrows * (local_ocols)] = recvbuf[j - 1];
+          }
+
+          top_right_corner((local_ocols), (local_orows), image_pad, tmp_image_pad);
+
+          //seconds
+          for (int i = 0; i < local_nrows; i++) {
+            sendbuf[i] = tmp_image_pad[1 + i * (local_ocols)];
+          }
+
+          MPI_Sendrecv(sendbuf, (local_orows), MPI_DOUBLE, west, tag, recvbuf, (local_orows), MPI_DOUBLE, west, tag, MPI_COMM_WORLD, &status);
+
+          for (int i = 0; i < local_nrows; i++) {
+            tmp_image_pad[i * (local_ocols)] = recvbuf[i];
+          }
+
+          for (int j = 1; j < local_ocols; j++) {
+            sendbuf[j - 1] = tmp_image_pad[j + (local_nrows - 1) * (local_ocols)];
+          }
+
+          MPI_Sendrecv(sendbuf, (local_orows), MPI_DOUBLE, south, tag, recvbuf, (local_orows), MPI_DOUBLE, south, tag, MPI_COMM_WORLD, &status);
+
+          for (int j = 1; j < (local_ocols); j++) {
+            tmp_image_pad[j + local_nrows * (local_ocols)] = recvbuf[j - 1];
+          }
+          top_right_corner((local_ocols), (local_orows), tmp_image_pad, image_pad);
+
+          // output_image("RANK4.pgm", local_ocols, local_orows, image_pad);
+
+        } else {
+          if (rank == bottom_right) {
+            //first
+            for (int j = 1; j < local_ocols; j++) {
+              sendbuf[j - 1] = image_pad[j + local_ocols];
+            }
+
+            MPI_Sendrecv(sendbuf, (local_orows), MPI_DOUBLE, north, tag, recvbuf, (local_orows), MPI_DOUBLE, north, tag, MPI_COMM_WORLD, &status);
+
+            for (int j = 1; j < local_ocols; j++) {
+              image_pad[j] = recvbuf[j - 1];
+
+            }
+
+            for (int i = 1; i < local_orows; i++) {
+              sendbuf[i - 1] = image_pad[1 + i * (local_ocols)];
+            }
+
+            MPI_Sendrecv(sendbuf, (local_orows), MPI_DOUBLE, west, tag, recvbuf, (local_orows), MPI_DOUBLE, west, tag, MPI_COMM_WORLD, &status);
+
+            for (int i = 1; i < local_orows; i++) {
+              image_pad[i * (local_ocols)] = recvbuf[i - 1];
+
+            }
+
+            bottom_right_corner((local_ocols), (local_orows), image_pad, tmp_image_pad);
+
+            //second
+            for (int j = 1; j < local_ocols; j++) {
+              sendbuf[j - 1] = tmp_image_pad[j + local_ocols];
+            }
+
+            MPI_Sendrecv(sendbuf, (local_orows), MPI_DOUBLE, north, tag, recvbuf, (local_orows), MPI_DOUBLE, north, tag, MPI_COMM_WORLD, &status);
+
+            for (int j = 1; j < local_ocols; j++) {
+              tmp_image_pad[j] = recvbuf[j - 1];
+
+            }
+
+            for (int i = 1; i < local_orows; i++) {
+              sendbuf[i - 1] = tmp_image_pad[1 + i * (local_ocols)];
+            }
+
+            MPI_Sendrecv(sendbuf, (local_orows), MPI_DOUBLE, west, tag, recvbuf, (local_orows), MPI_DOUBLE, west, tag, MPI_COMM_WORLD, &status);
+
+            for (int i = 1; i < local_orows; i++) {
+              tmp_image_pad[i * (local_ocols)] = recvbuf[i - 1];
+
+            }
+            bottom_right_corner((local_ocols), (local_orows), tmp_image_pad, image_pad);
+
+            // output_image("RANK5.pgm", local_ocols, local_orows, image_pad);
+
+          } else {
+            if ((rank % 2) == 0) {
+
+              //first
+              //send to south
+              for (int j = 1; j < local_ocols; j++) {
+                sendbuf[j - 1] = image_pad[j + (local_nrows - 1) * (local_ncols + 2)];
+              }
+
+              MPI_Sendrecv(sendbuf, (local_orows), MPI_DOUBLE, south, tag, recvbuf, (local_orows), MPI_DOUBLE, south, tag, MPI_COMM_WORLD, &status);
+
+              for (int j = 1; j < local_ocols; j++) {
+                image_pad[j + (local_nrows) * (local_ncols + 2)] = recvbuf[j - 1];
+
+              }
+
+              // send to west
+              for (int i = 0; i < local_nrows; i++) {
+                sendbuf[i] = image_pad[1 + i * (local_ncols + 2)];
+              }
+
+              MPI_Sendrecv(sendbuf, (local_orows), MPI_DOUBLE, west, tag, recvbuf, (local_orows), MPI_DOUBLE, west, tag, MPI_COMM_WORLD, &status);
+
+              for (int i = 0; i < local_nrows; i++) {
+                image_pad[i * (local_ncols + 2)] = recvbuf[i];
+
+              }
+
+              // send to east
+
+              for (int i = 0; i < local_nrows; i++) {
+                sendbuf[i] = image_pad[(local_ncols) + i * (local_ncols + 2)];
+              }
+
+              MPI_Sendrecv(sendbuf, (local_orows), MPI_DOUBLE, east, tag, recvbuf, (local_orows), MPI_DOUBLE, east, tag, MPI_COMM_WORLD, &status);
+
+              for (int i = 0; i < local_nrows; i++) {
+                  image_pad[(local_ocols) + i * (local_ncols + 2)] = recvbuf[i];
+
+              }
+
+              top((local_ncols + 2), (local_orows), image_pad, tmp_image_pad);
+
+              //seconds
+              //send to south
+              for (int j = 1; j < local_ocols; j++) {
+                sendbuf[j - 1] = tmp_image_pad[j + (local_nrows - 1) * (local_ncols + 2)];
+              }
+
+              MPI_Sendrecv(sendbuf, (local_orows), MPI_DOUBLE, south, tag, recvbuf, (local_orows), MPI_DOUBLE, south, tag, MPI_COMM_WORLD, &status);
+
+              for (int j = 1; j < local_ocols; j++) {
+                tmp_image_pad[j + (local_nrows) * (local_ncols + 2)] = recvbuf[j - 1];
+
+              }
+
+              // send to west
+              for (int i = 0; i < local_nrows; i++) {
+                sendbuf[i] = tmp_image_pad[1 + i * (local_ncols + 2)];
+              }
+
+              MPI_Sendrecv(sendbuf, (local_orows), MPI_DOUBLE, west, tag, recvbuf, (local_orows), MPI_DOUBLE, west, tag, MPI_COMM_WORLD, &status);
+
+              for (int i = 0; i < local_nrows; i++) {
+                tmp_image_pad[i * (local_ncols + 2)] = recvbuf[i];
+
+              }
+
+              // send to east
+
+              for (int i = 0; i < local_nrows; i++) {
+                sendbuf[i] = tmp_image_pad[(local_ncols) + i * (local_ncols + 2)];
+              }
+
+              MPI_Sendrecv(sendbuf, (local_orows), MPI_DOUBLE, east, tag, recvbuf, (local_orows), MPI_DOUBLE, east, tag, MPI_COMM_WORLD, &status);
+
+              for (int i = 0; i < local_nrows; i++) {
+                  tmp_image_pad[(local_ocols) + i * (local_ncols + 2)] = recvbuf[i];
+
+              }
+              top((local_ncols + 2), (local_orows), tmp_image_pad, image_pad);
+
+              // output_image("RANK2.pgm", local_ncols + 2, local_orows, image_pad);
+
+            } else {
+              if ((rank % 2) == 1) {
+                //first
+                //send to north
+                for (int j = 1; j < local_ocols; j++) {
+                  sendbuf[j - 1] = image_pad[j + local_ncols + 2];
+                }
+
+                MPI_Sendrecv(sendbuf, (local_orows), MPI_DOUBLE, north, tag, recvbuf, (local_orows), MPI_DOUBLE, north, tag, MPI_COMM_WORLD, &status);
+
+                for (int j = 1; j < local_ocols; j++) {
+                  image_pad[j] = recvbuf[j - 1];
+
+                }
+
+                // send to west
+                for (int i = 1; i < local_orows; i++) {
+                  sendbuf[i - 1] = image_pad[1 + i * (local_ncols + 2)];
+                }
+
+                MPI_Sendrecv(sendbuf, (local_orows), MPI_DOUBLE, west, tag, recvbuf, (local_orows), MPI_DOUBLE, west, tag, MPI_COMM_WORLD, &status);
+
+                for (int i = 1; i < local_orows; i++) {
+                  image_pad[i * (local_ncols + 2)] = recvbuf[i - 1];
+
+                }
+
+                // send to east
+
+                for (int i = 1; i < local_orows; i++) {
+                  sendbuf[i - 1] = image_pad[(local_ncols) + i * (local_ncols + 2)];
+                }
+
+                MPI_Sendrecv(sendbuf, (local_orows), MPI_DOUBLE, east, tag, recvbuf, (local_orows), MPI_DOUBLE, east, tag, MPI_COMM_WORLD, &status);
+
+                for (int i = 1; i < local_orows; i++) {
+                    image_pad[(local_ocols) + i * (local_ncols + 2)] = recvbuf[i - 1];
+
+                }
+
+                bottom((local_ncols + 2), (local_orows), image_pad, tmp_image_pad);
+
+                //second
+                //send to north
+                for (int j = 1; j < local_ocols; j++) {
+                  sendbuf[j - 1] = tmp_image_pad[j + local_ncols + 2];
+                }
+
+                MPI_Sendrecv(sendbuf, (local_orows), MPI_DOUBLE, north, tag, recvbuf, (local_orows), MPI_DOUBLE, north, tag, MPI_COMM_WORLD, &status);
+
+                for (int j = 1; j < local_ocols; j++) {
+                  tmp_image_pad[j] = recvbuf[j - 1];
+
+                }
+
+                // send to west
+                for (int i = 1; i < local_orows; i++) {
+                  sendbuf[i - 1] = tmp_image_pad[1 + i * (local_ncols + 2)];
+                }
+
+                MPI_Sendrecv(sendbuf, (local_orows), MPI_DOUBLE, west, tag, recvbuf, (local_orows), MPI_DOUBLE, west, tag, MPI_COMM_WORLD, &status);
+
+                for (int i = 1; i < local_orows; i++) {
+                  tmp_image_pad[i * (local_ncols + 2)] = recvbuf[i - 1];
+
+                }
+
+                // send to east
+
+                for (int i = 1; i < local_orows; i++) {
+                  sendbuf[i - 1] = tmp_image_pad[(local_ncols) + i * (local_ncols + 2)];
+                }
+
+                MPI_Sendrecv(sendbuf, (local_orows), MPI_DOUBLE, east, tag, recvbuf, (local_orows), MPI_DOUBLE, east, tag, MPI_COMM_WORLD, &status);
+
+                for (int i = 1; i < local_orows; i++) {
+                    tmp_image_pad[(local_ocols) + i * (local_ncols + 2)] = recvbuf[i - 1];
+
+                }
+                bottom((local_ncols + 2), (local_orows), tmp_image_pad, image_pad);
+
+                // output_image("RANK3.pgm", local_ncols + 2, local_orows, image_pad);
+
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
 void top_left_corner(const int nx, const int ny, float * restrict image, float * restrict tmp_image) {
   float initialMul = 0.6f;
   float Mul = 0.1f;
   float numberToadd = 0.0f;
 
   // when i = 0, j = 0
-
   numberToadd = image[0] * initialMul;
-  numberToadd += image[ny] * Mul;
+  numberToadd += image[nx] * Mul;
   numberToadd += image[1] * Mul;
   tmp_image[0] = numberToadd;
 
-  // when i = 0, 0 < j < ny - 1
-  for (int j = 1; j < ny - 1; j++) {
+  for (int j = 1; j < nx - 1; j++) {
     numberToadd = image[j] * initialMul;
-    numberToadd += image[j + ny] * Mul;
-    numberToadd += image[j-1] * Mul;
-    numberToadd += image[j+1] * Mul;
-    tmp_image[j] = numberToadd;
-
+  	numberToadd += image[j + nx] * Mul;
+  	numberToadd += image[j-1] * Mul;
+  	numberToadd += image[j+1] * Mul;
+  	tmp_image[j] = numberToadd;
   }
 
-  // when 0 < i < nx -1, j = 0
-  for (int i = 1; i < nx - 1; i++) {
-    numberToadd = image[i * ny] * initialMul;
-    numberToadd += image[(i-1) * ny] * Mul;
-    numberToadd += image[(i+1) * ny] * Mul;
-    numberToadd += image[1 + i * ny] * Mul;
-    tmp_image[i * ny] = numberToadd;
+  for (int i = 1; i < ny - 1; i++) {
+    numberToadd = image[i * nx] * initialMul;
+  	numberToadd += image[(i-1) * nx] * Mul;
+  	numberToadd += image[(i+1) * nx] * Mul;
+  	numberToadd += image[1 + i * nx] * Mul;
+  	tmp_image[i * nx] = numberToadd;
   }
 
-  for (int i = 1; i < nx - 1; i++) {
-    for (int j = 1; j < ny - 1; j++) {
-      tmp_image[j+i*ny] = image[j+i*ny] * initialMul;
-      tmp_image[j+i*ny] += image[j  +(i-1)*ny] * Mul;
-      tmp_image[j+i*ny] += image[j  +(i+1)*ny] * Mul;
-      tmp_image[j+i*ny] += image[j-1+i*ny] * Mul;
-      tmp_image[j+i*ny] += image[j+1+i*ny] * Mul;
-
-      // tmp_image[j+i*ny] = numberToadd;
+  for (int i = 1; i < ny - 1; i++) {
+    for (int j = 1; j < nx - 1; j++) {
+      tmp_image[j+i*nx] = image[j+i*nx] * initialMul;
+      tmp_image[j+i*nx] += image[j  +(i-1)*nx] * Mul;
+      tmp_image[j+i*nx] += image[j  +(i+1)*nx] * Mul;
+      tmp_image[j+i*nx] += image[j-1+i*nx] * Mul;
+      tmp_image[j+i*nx] += image[j+1+i*nx] * Mul;
     }
   }
-
-
-
 }
 
 void bottom_left_corner(const int nx, const int ny, float * restrict image, float * restrict tmp_image) {
@@ -331,37 +814,59 @@ void bottom_left_corner(const int nx, const int ny, float * restrict image, floa
   float Mul = 0.1f;
   float numberToadd = 0.0f;
 
-  // when i = 0, j = ny - 1
-  numberToadd = image[(ny - 1)] * initialMul;
-  numberToadd += image[(ny - 1) + ny] * Mul;
-  numberToadd += image[(ny - 2)] * Mul;
-  tmp_image[(ny - 1)] = numberToadd;
+  numberToadd = image[(ny - 1) * nx] * initialMul;
+  numberToadd += image[(ny - 2) * nx] * Mul;
+  numberToadd += image[1 + (ny - 1) * nx] * Mul;
+  tmp_image[(ny - 1) * nx] = numberToadd;
 
-  // when i = 0, 0 < j < ny - 1
-  for (int j = 1; j < ny - 1; j++) {
-  	numberToadd = image[j] * initialMul;
-  	numberToadd += image[j + ny] * Mul;
-  	numberToadd += image[j-1] * Mul;
-  	numberToadd += image[j+1] * Mul;
-  	tmp_image[j] = numberToadd;
+  for (int i = 1; i < ny - 1; i++) {
+  	numberToadd = image[i * nx] * initialMul;
+  	numberToadd += image[(i-1) * nx] * Mul;
+  	numberToadd += image[(i+1) * nx] * Mul;
+  	numberToadd += image[1 + i * nx] * Mul;
+  	tmp_image[i * nx] = numberToadd;
   }
 
-  // when 0 < i < nx - 1, j = ny - 1
-  for (int i = 1; i < nx - 1; i++) {
-    numberToadd = image[(ny - 1) + i * ny] * initialMul;
-  	numberToadd += image[(ny - 1) + (i - 1) * ny] * Mul;
-  	numberToadd += image[(ny - 1) + (i + 1) * ny] * Mul;
-  	numberToadd += image[(ny - 2) + i * ny] * Mul;
-  	tmp_image[(ny - 1) + i * ny] = numberToadd;
+  for (int j = 1; j < nx - 1; j++) {
+  	numberToadd = image[j+(ny-1)*nx] * initialMul;
+  	numberToadd += image[j+(ny-2)*nx] * Mul;
+  	numberToadd += image[j-1+(ny-1)*nx] * Mul;
+  	numberToadd += image[j+1+(ny-1)*nx] * Mul;
+  	tmp_image[j+(ny-1)*nx] = numberToadd;
   }
 
-  for (int i = 1; i < nx - 1; i++) {
-    for (int j = 1; j < ny - 1; j++) {
-      tmp_image[j+i*ny] = image[j+i*ny] * initialMul;
-      tmp_image[j+i*ny] += image[j  +(i-1)*ny] * Mul;
-      tmp_image[j+i*ny] += image[j  +(i+1)*ny] * Mul;
-      tmp_image[j+i*ny] += image[j-1+i*ny] * Mul;
-      tmp_image[j+i*ny] += image[j+1+i*ny] * Mul;
+  for (int i = 1; i < ny - 1; i++) {
+    for (int j = 1; j < nx - 1; j++) {
+      tmp_image[j+i*nx] = image[j+i*nx] * initialMul;
+      tmp_image[j+i*nx] += image[j  +(i-1)*nx] * Mul;
+      tmp_image[j+i*nx] += image[j  +(i+1)*nx] * Mul;
+      tmp_image[j+i*nx] += image[j-1+i*nx] * Mul;
+      tmp_image[j+i*nx] += image[j+1+i*nx] * Mul;
+    }
+  }
+
+}
+
+void top(const int nx, const int ny, float * restrict image, float * restrict tmp_image) {
+  float initialMul = 0.6f;
+  float Mul = 0.1f;
+  float numberToadd = 0.0f;
+
+  for (int j = 1; j < nx - 1; j++) {
+    numberToadd = image[j] * initialMul;
+    numberToadd += image[j + nx] * Mul;
+    numberToadd += image[j-1] * Mul;
+    numberToadd += image[j+1] * Mul;
+    tmp_image[j] = numberToadd;
+  }
+
+  for (int i = 1; i < ny - 1; i++) {
+    for (int j = 1; j < nx - 1; j++) {
+      tmp_image[j+i*nx] = image[j+i*nx] * initialMul;
+      tmp_image[j+i*nx] += image[j  +(i-1)*nx] * Mul;
+      tmp_image[j+i*nx] += image[j  +(i+1)*nx] * Mul;
+      tmp_image[j+i*nx] += image[j-1+i*nx] * Mul;
+      tmp_image[j+i*nx] += image[j+1+i*nx] * Mul;
 
       // tmp_image[j+i*ny] = numberToadd;
     }
@@ -369,55 +874,27 @@ void bottom_left_corner(const int nx, const int ny, float * restrict image, floa
 
 }
 
-void left(const int nx, const int ny, float * restrict image, float * restrict tmp_image) {
+void bottom(const int nx, const int ny, float * restrict image, float * restrict tmp_image) {
   float initialMul = 0.6f;
   float Mul = 0.1f;
   float numberToadd = 0.0f;
 
-  // when i = 0, 0 < j < ny - 1
-  for (int j = 1; j < ny - 1; j++) {
-  	numberToadd = image[j] * initialMul;
-  	numberToadd += image[j + ny] * Mul;
-  	numberToadd += image[j-1] * Mul;
-  	numberToadd += image[j+1] * Mul;
-  	tmp_image[j] = numberToadd;
+  for (int j = 1; j < nx - 1; j++) {
+    numberToadd = image[j+(ny-1)*nx] * initialMul;
+  	numberToadd += image[j+(ny-2)*nx] * Mul;
+  	numberToadd += image[j-1+(ny-1)*nx] * Mul;
+  	numberToadd += image[j+1+(ny-1)*nx] * Mul;
+  	tmp_image[j+(ny-1)*nx] = numberToadd;
   }
 
-  for (int i = 1; i < nx - 1; i++) {
-    for (int j = 1; j < ny - 1; j++) {
-      tmp_image[j+i*ny] = image[j+i*ny] * initialMul;
-      tmp_image[j+i*ny] += image[j  +(i-1)*ny] * Mul;
-      tmp_image[j+i*ny] += image[j  +(i+1)*ny] * Mul;
-      tmp_image[j+i*ny] += image[j-1+i*ny] * Mul;
-      tmp_image[j+i*ny] += image[j+1+i*ny] * Mul;
 
-      // tmp_image[j+i*ny] = numberToadd;
-    }
-  }
-}
-
-void right(const int nx, const int ny, float * restrict image, float * restrict tmp_image) {
-  float initialMul = 0.6f;
-  float Mul = 0.1f;
-  float numberToadd = 0.0f;
-
-  // when i = nx - 1, 0 < j < ny - 1
-
-  for (int j = 1; j < ny - 1; j++) {
-    numberToadd = image[j+(nx-1)*ny] * initialMul;
-    numberToadd += image[j+(nx-2)*ny] * Mul;
-    numberToadd += image[j-1+(nx-1)*ny] * Mul;
-    numberToadd += image[j+1+(nx-1)*ny] * Mul;
-    tmp_image[j+(nx-1)*ny] = numberToadd;
-  }
-
-  for (int i = 1; i < nx - 1; i++) {
-    for (int j = 1; j < ny - 1; j++) {
-      tmp_image[j+i*ny] = image[j+i*ny] * initialMul;
-      tmp_image[j+i*ny] += image[j  +(i-1)*ny] * Mul;
-      tmp_image[j+i*ny] += image[j  +(i+1)*ny] * Mul;
-      tmp_image[j+i*ny] += image[j-1+i*ny] * Mul;
-      tmp_image[j+i*ny] += image[j+1+i*ny] * Mul;
+  for (int i = 1; i < ny - 1; i++) {
+    for (int j = 1; j < nx - 1; j++) {
+      tmp_image[j+i*nx] = image[j+i*nx] * initialMul;
+      tmp_image[j+i*nx] += image[j  +(i-1)*nx] * Mul;
+      tmp_image[j+i*nx] += image[j  +(i+1)*nx] * Mul;
+      tmp_image[j+i*nx] += image[j-1+i*nx] * Mul;
+      tmp_image[j+i*nx] += image[j+1+i*nx] * Mul;
 
       // tmp_image[j+i*ny] = numberToadd;
     }
@@ -430,42 +907,37 @@ void top_right_corner(const int nx, const int ny, float * restrict image, float 
   float Mul = 0.1f;
   float numberToadd = 0.0f;
 
-  // when i = nx - 1, j = 0
-  numberToadd = image[(nx - 1) * ny] * initialMul;
-  numberToadd += image[(ny - 2) * ny] * Mul;
-  numberToadd += image[1 + (nx - 1) * ny] * Mul;
-  tmp_image[(ny - 1) * ny] = numberToadd;
+  numberToadd = image[(nx - 1)] * initialMul;
+  numberToadd += image[(nx - 1) + nx] * Mul;
+  numberToadd += image[(nx - 2)] * Mul;
+  tmp_image[(nx - 1)] = numberToadd;
 
-  // when 0 < i < nx - 1, j = 0
-  for (int i = 1; i < nx - 1; i++) {
-    numberToadd = image[i * ny] * initialMul;
-    numberToadd += image[(i-1) * ny] * Mul;
-    numberToadd += image[(i+1) * ny] * Mul;
-    numberToadd += image[1 + i * ny] * Mul;
-    tmp_image[i * ny] = numberToadd;
+  for (int j = 1; j < nx - 1; j++) {
+  	numberToadd = image[j] * initialMul;
+  	numberToadd += image[j + nx] * Mul;
+  	numberToadd += image[j-1] * Mul;
+  	numberToadd += image[j+1] * Mul;
+  	tmp_image[j] = numberToadd;
   }
 
-  // when i = nx - 1, 0 < j < ny - 1
-
-  for (int j = 1; j < ny - 1; j++) {
-    numberToadd = image[j+(nx-1)*ny] * initialMul;
-  	numberToadd += image[j+(nx-2)*ny] * Mul;
-  	numberToadd += image[j-1+(nx-1)*ny] * Mul;
-  	numberToadd += image[j+1+(nx-1)*ny] * Mul;
-  	tmp_image[j+(nx-1)*ny] = numberToadd;
+  for (int i = 1; i < ny - 1; i++) {
+    numberToadd = image[(nx - 1) + i * nx] * initialMul;
+  	numberToadd += image[(nx - 1) + (i - 1) * nx] * Mul;
+  	numberToadd += image[(nx - 1) + (i + 1) * nx] * Mul;
+  	numberToadd += image[(nx - 2) + i * nx] * Mul;
+  	tmp_image[(nx - 1) + i * nx] = numberToadd;
   }
 
-  for (int i = 1; i < nx - 1; i++) {
-    for (int j = 1; j < ny - 1; j++) {
-      tmp_image[j+i*ny] = image[j+i*ny] * initialMul;
-      tmp_image[j+i*ny] += image[j  +(i-1)*ny] * Mul;
-      tmp_image[j+i*ny] += image[j  +(i+1)*ny] * Mul;
-      tmp_image[j+i*ny] += image[j-1+i*ny] * Mul;
-      tmp_image[j+i*ny] += image[j+1+i*ny] * Mul;
-
-      // tmp_image[j+i*ny] = numberToadd;
+  for (int i = 1; i < ny - 1; i++) {
+    for (int j = 1; j < nx - 1; j++) {
+      tmp_image[j+i*nx] = image[j+i*nx] * initialMul;
+      tmp_image[j+i*nx] += image[j  +(i-1)*nx] * Mul;
+      tmp_image[j+i*nx] += image[j  +(i+1)*nx] * Mul;
+      tmp_image[j+i*nx] += image[j-1+i*nx] * Mul;
+      tmp_image[j+i*nx] += image[j+1+i*nx] * Mul;
     }
   }
+
 
 }
 
@@ -474,116 +946,37 @@ void bottom_right_corner(const int nx, const int ny, float * restrict image, flo
   float Mul = 0.1f;
   float numberToadd = 0.0f;
 
-  // when i = nx - 1,  j = ny - 1
-  numberToadd = image[(ny - 1) + (nx - 1) * ny] * initialMul;
-  numberToadd += image[(ny - 1) + (nx - 2) * ny] * Mul;
-  numberToadd += image[(ny - 2) + (nx - 1) * ny] * Mul;
-  tmp_image[(ny - 1) + (nx - 1) * ny] = numberToadd;
+  numberToadd = image[(nx - 1) + (ny - 1) * nx] * initialMul;
+  numberToadd += image[(nx - 1) + (ny - 2) * nx] * Mul;
+  numberToadd += image[(nx - 2) + (ny - 1) * nx] * Mul;
+  tmp_image[(nx - 1) + (ny - 1) * nx] = numberToadd;
 
-  // when i = nx - 1, 0 < j < ny - 1
-  for (int j = 1; j < ny - 1; j++) {
-    numberToadd = image[j+(nx-1)*ny] * initialMul;
-  	numberToadd += image[j+(nx-2)*ny] * Mul;
-  	numberToadd += image[j-1+(nx-1)*ny] * Mul;
-  	numberToadd += image[j+1+(nx-1)*ny] * Mul;
-  	tmp_image[j+(nx-1)*ny] = numberToadd;
+  for (int i = 1; i < ny - 1; i++) {
+    numberToadd = image[(nx - 1) + i * nx] * initialMul;
+  	numberToadd += image[(nx - 1) + (i - 1) * nx] * Mul;
+  	numberToadd += image[(nx - 1) + (i + 1) * nx] * Mul;
+  	numberToadd += image[(nx - 2) + i * nx] * Mul;
+  	tmp_image[(nx - 1) + i * nx] = numberToadd;
   }
 
-  // when 0 < i < nx - 1, j = ny - 1
-  for (int i = 1; i < nx - 1; i++) {
-    numberToadd = image[(ny - 1) + i * ny] * initialMul;
-  	numberToadd += image[(ny - 1) + (i - 1) * ny] * Mul;
-  	numberToadd += image[(ny - 1) + (i + 1) * ny] * Mul;
-  	numberToadd += image[(ny - 2) + i * ny] * Mul;
-  	tmp_image[(ny - 1) + i * ny] = numberToadd;
+  for (int j = 1; j < nx - 1; j++) {
+    numberToadd = image[j+(ny-1)*nx] * initialMul;
+  	numberToadd += image[j+(ny-2)*nx] * Mul;
+  	numberToadd += image[j-1+(ny-1)*nx] * Mul;
+  	numberToadd += image[j+1+(ny-1)*nx] * Mul;
+  	tmp_image[j+(ny-1)*nx] = numberToadd;
   }
 
-  for (int i = 1; i < nx - 1; i++) {
-    for (int j = 1; j < ny - 1; j++) {
-      tmp_image[j+i*ny] = image[j+i*ny] * initialMul;
-      tmp_image[j+i*ny] += image[j  +(i-1)*ny] * Mul;
-      tmp_image[j+i*ny] += image[j  +(i+1)*ny] * Mul;
-      tmp_image[j+i*ny] += image[j-1+i*ny] * Mul;
-      tmp_image[j+i*ny] += image[j+1+i*ny] * Mul;
-
-      // tmp_image[j+i*ny] = numberToadd;
+  for (int i = 1; i < ny - 1; i++) {
+    for (int j = 1; j < nx - 1; j++) {
+      tmp_image[j+i*nx] = image[j+i*nx] * initialMul;
+      tmp_image[j+i*nx] += image[j  +(i-1)*nx] * Mul;
+      tmp_image[j+i*nx] += image[j  +(i+1)*nx] * Mul;
+      tmp_image[j+i*nx] += image[j-1+i*nx] * Mul;
+      tmp_image[j+i*nx] += image[j+1+i*nx] * Mul;
     }
   }
 
-}
-
-void stencil(const int nx, const int ny, float * restrict image, float * restrict tmp_image) {
-  float initialMul = 0.6f;
-
-  float  Mul = 0.1f;
-
-  float numberToadd = 0.0f;
-
-  // when i = 0, j = 0
-  numberToadd = image[0] * initialMul;
-  numberToadd += image[ny] * Mul;
-  numberToadd += image[1] * Mul;
-  tmp_image[0] = numberToadd;
-
-  // when i = 0, j = ny - 1
-  numberToadd = image[(ny - 1)] * initialMul;
-  numberToadd += image[(ny - 1) + ny] * Mul;
-  numberToadd += image[(ny - 2)] * Mul;
-  tmp_image[(ny - 1)] = numberToadd;
-
-  // when i = nx - 1, j = 0
-  numberToadd = image[(nx - 1) * ny] * initialMul;
-  numberToadd += image[(ny - 2) * ny] * Mul;
-  numberToadd += image[1 + (nx - 1) * ny] * Mul;
-  tmp_image[(ny - 1) * ny] = numberToadd;
-
-  // when i = nx - 1,  j = ny - 1
-  numberToadd = image[(ny - 1) + (nx - 1) * ny] * initialMul;
-  numberToadd += image[(ny - 1) + (nx - 2) * ny] * Mul;
-  numberToadd += image[(ny - 2) + (nx - 1) * ny] * Mul;
-  tmp_image[(ny - 1) + (nx - 1) * ny] = numberToadd;
-
-  // when i = 0, 0 < j < ny - 1, when i = nx - 1, 0 < j < ny - 1
-
-  for (int j = 1; j < ny - 1; j++) {
-  	numberToadd = image[j] * initialMul;
-  	numberToadd += image[j + ny] * Mul;
-  	numberToadd += image[j-1] * Mul;
-  	numberToadd += image[j+1] * Mul;
-  	tmp_image[j] = numberToadd;
-  	numberToadd = image[j+(nx-1)*ny] * initialMul;
-  	numberToadd += image[j+(nx-2)*ny] * Mul;
-  	numberToadd += image[j-1+(nx-1)*ny] * Mul;
-  	numberToadd += image[j+1+(nx-1)*ny] * Mul;
-  	tmp_image[j+(nx-1)*ny] = numberToadd;
-  }
-  // when 0 < i < nx -1, j = 0 and when 0 < i < nx - 1, j = ny - 1
-
-  for (int i = 1; i < nx - 1; i++) {
-  	numberToadd = image[i * ny] * initialMul;
-  	numberToadd += image[(i-1) * ny] * Mul;
-  	numberToadd += image[(i+1) * ny] * Mul;
-  	numberToadd += image[1 + i * ny] * Mul;
-  	tmp_image[i * ny] = numberToadd;
-  	numberToadd = image[(ny - 1) + i * ny] * initialMul;
-  	numberToadd += image[(ny - 1) + (i - 1) * ny] * Mul;
-  	numberToadd += image[(ny - 1) + (i + 1) * ny] * Mul;
-  	numberToadd += image[(ny - 2) + i * ny] * Mul;
-  	tmp_image[(ny - 1) + i * ny] = numberToadd;
-  }
-
-
-  for (int i = 1; i < nx - 1; i++) {
-    for (int j = 1; j < ny - 1; j++) {
-      tmp_image[j+i*ny] = image[j+i*ny] * initialMul;
-      tmp_image[j+i*ny] += image[j  +(i-1)*ny] * Mul;
-      tmp_image[j+i*ny] += image[j  +(i+1)*ny] * Mul;
-      tmp_image[j+i*ny] += image[j-1+i*ny] * Mul;
-      tmp_image[j+i*ny] += image[j+1+i*ny] * Mul;
-
-      // tmp_image[j+i*ny] = numberToadd;
-    }
-  }
 }
 
 // Create the input image

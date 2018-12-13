@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
 
   // Call the stencil kernel
   double tic = wtime();
-  
+
   for (int t = 0; t < niters; ++t) {
     stencil(nx, ny, image, tmp_image);
     stencil(nx, ny, tmp_image, image);
@@ -42,9 +42,12 @@ int main(int argc, char *argv[]) {
 
 
   // Output
-  printf("------------------------------------\n");
-  printf(" runtime: %lf s\n", toc-tic);
-  printf("------------------------------------\n");
+  for (int i = 0; i < ny; i++) {
+    for (int j = 0; j < nx; j++) {
+      printf(" %f |", image[j + i * nx]);
+    }
+    printf("\n");
+  }
 
   output_image(OUTPUT_FILE, nx, ny, image);
   free(image);
@@ -56,7 +59,7 @@ void stencil(const int nx, const int ny, float * restrict image, float * restric
   float  Mul = 0.1f;
 
   float numberToadd = 0.0f;
- 
+
   // when i = 0, j = 0
   numberToadd = image[0] * initialMul;
   numberToadd += image[ny] * Mul;
@@ -95,7 +98,7 @@ void stencil(const int nx, const int ny, float * restrict image, float * restric
 	numberToadd += image[j+1+(nx-1)*ny] * Mul;
 	tmp_image[j+(nx-1)*ny] = numberToadd;
   }
-  // when 0 < i < nx -1, j = 0 and when 0 < i < nx - 1, j = ny - 1 
+  // when 0 < i < nx -1, j = 0 and when 0 < i < nx - 1, j = ny - 1
 
   for (int i = 1; i < nx - 1; i++) {
 	numberToadd = image[i * ny] * initialMul;
