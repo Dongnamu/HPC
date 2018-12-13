@@ -305,10 +305,27 @@ int main(int argc, char *argv[]) {
       }
     }
   }
+  double final_time = toc - tic;
 
-  printf("------------------------------------\n");
-  printf(" runtime: %lf s\n", toc-tic);
-  printf("------------------------------------\n");
+  if (rank == MASTER) {
+    double add_time;
+    add_time = add_time + final_time;
+
+    for (int k = 1; k < size; k++) {
+      MPI_Recv(recvbuf, 1, MPI_DOUBLE, k, tag, MPI_COMM_WORLD, &status);
+      add_time = add_time + recvbuf[0];
+    }
+
+    add_time = add_time / size;
+
+    printf("------------------------------------\n");
+    printf(" runtime: %lf s\n", toc-tic);
+    printf("------------------------------------\n");
+
+  } else {
+    sendbuf[0] = final_time;
+    MPI_Send(sendbuf, 4, MPI_DOUBLE, MASTER, tag, MPI_COMM_WORLD);
+  }
 
 
   // if (rank == 2){
